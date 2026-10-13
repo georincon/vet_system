@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:18
+    container_name: veterinaria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: veterinaria
+      POSTGRES_USER: veterinaria_app
+      POSTGRES_PASSWORD: veterinaria_dev_pwd
+    ports:
+      # Host 5256 para no chocar con el postgres del proyecto anterior (5432).
+      - "5256:5432"
+    volumes:
+      # En las imagenes de PostgreSQL 18+ el volumen va en /var/lib/postgresql
+      # (los datos caen en un subdirectorio versionado, p. ej. 18/docker).
+      - veterinaria_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veterinaria_app -d veterinaria"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: veterinaria-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      VET_PORT: "9010"
+      VET_DB_URL: jdbc:postgresql://db:5432/veterinaria
+      VET_DB_USER: veterinaria_app
+      VET_DB_PASSWORD: veterinaria_dev_pwd
+      VET_JWT_SECRET: ${VET_JWT_SECRET:-cambie-esta-clave-secreta-de-desarrollo-0123456789abcdef}
+      VET_CORS_ALLOWED_ORIGINS: ${VET_CORS_ALLOWED_ORIGINS:-http://localhost:8090}
+      VET_SEED_ADMIN: "true"
+      VET_SEED_CATALOGOS: "true"
+    ports:
+      - "9010:9010"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: veterinaria-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8090:8090"
+
+volumes:
+  veterinaria_pgdata:

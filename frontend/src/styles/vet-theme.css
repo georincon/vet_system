@@ -1,0 +1,131 @@
+/* Tema Veterinaria — mismo lenguaje visual del emisor de referencia:
+   gradiente verde→azul, tarjetas con borde suave, títulos de sección verdes,
+   barra de acento inferior. */
+:root {
+  --vet-green: #006837;
+  --vet-green-dark: #004d2c;
+  --vet-green-light: #e8f5e9;
+  --vet-blue: #066aab;
+  --vet-blue-dark: #04507a;
+  --vet-blue-light: #e3f2fd;
+  --vet-gold: #f9a825;
+  --vet-gray: #f5f5f5;
+  --vet-gray-light: #fafafa;
+  --vet-text: #333333;
+  --vet-text-light: #666666;
+  --vet-border: #e0e0e0;
+  --vet-border-light: #f1f1f1;
+  --vet-danger: #c62828;
+  --vet-warning: #f57f17;
+}
+
+html, body, #app { height: 100%; }
+body { margin: 0; background: #fff; }
+
+.v-application {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    Cantarell, 'Helvetica Neue', sans-serif;
+  color: var(--vet-text);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Barra superior ---- */
+.vet-appbar {
+  background: linear-gradient(135deg, var(--vet-green) 0%, var(--vet-blue) 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 8px rgba(0, 104, 55, 0.15) !important;
+}
+.vet-brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 1.15rem; }
+.vet-brand img { width: 30px; height: 30px; flex-shrink: 0; }
+
+/* ---- Menú lateral ---- */
+.v-navigation-drawer { border-right: 1px solid var(--vet-border) !important; }
+.v-navigation-drawer .v-list-item { border-radius: 6px; min-height: 46px; }
+.v-navigation-drawer .v-list-item:hover { background: var(--vet-gray); }
+.v-navigation-drawer .v-list-item--active {
+  background: var(--vet-green-light);
+  color: var(--vet-green);
+  border-left: 3px solid var(--vet-green);
+  border-radius: 0 6px 6px 0;
+}
+.v-navigation-drawer .v-list-item--active .v-list-item-title { font-weight: 600; }
+.v-list-subheader { letter-spacing: .8px; }
+
+/* ---- Contenido ---- */
+.vet-content { max-width: 1280px; margin: 0 auto; }
+
+.vet-header {
+  background: linear-gradient(135deg, var(--vet-green) 0%, var(--vet-blue) 100%);
+  color: #fff;
+  padding: 20px 24px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 104, 55, 0.15);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.vet-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; line-height: 1.3; }
+.vet-header p { margin: 2px 0 0; opacity: .9; }
+.vet-header .v-btn--variant-flat { background: #fff !important; color: var(--vet-green) !important; }
+
+.vet-section-title {
+  color: var(--vet-green);
+  border-bottom: 2px solid var(--vet-green);
+  padding-bottom: 8px; margin-bottom: 16px;
+  font-weight: 700; font-size: 1.1rem;
+}
+
+.vet-info-bar {
+  background: var(--vet-gray);
+  border-left: 4px solid var(--vet-green);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.vet-footer-accent {
+  height: 4px; margin-top: 32px; border-radius: 2px;
+  background: linear-gradient(90deg, var(--vet-green) 0%, var(--vet-blue) 50%, var(--vet-gold) 100%);
+}
+
+.vet-stat-card { transition: all .25s ease; cursor: pointer; }
+.vet-stat-card:hover { border-color: var(--vet-green) !important; box-shadow: 0 4px 12px rgba(0,104,55,.12) !important; transform: translateY(-2px); }
+
+/* ---- Tarjetas, diálogos ---- */
+.v-card { border-radius: 10px; }
+.v-card.v-card--border, .v-card--variant-elevated { border: 1px solid var(--vet-border); box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.v-dialog .v-card { box-shadow: 0 10px 40px rgba(0,0,0,.12); }
+.v-dialog .v-card-title { border-bottom: 1px solid var(--vet-border-light); color: var(--vet-green); font-weight: 700; }
+
+/* ---- Botones ---- */
+.v-btn { text-transform: none; font-weight: 600; letter-spacing: 0; border-radius: 6px; }
+.v-btn--variant-flat.v-btn--color-primary:hover { background: var(--vet-green-dark) !important; box-shadow: 0 2px 8px rgba(0,104,55,.3); }
+
+/* ---- Formularios ---- */
+.v-field--focused .v-field__outline { color: var(--vet-green); }
+.v-field--focused .v-label { color: var(--vet-green); }
+
+/* ---- Tablas ---- */
+.v-data-table { border: 1px solid var(--vet-border); border-radius: 8px; overflow: hidden; }
+.v-data-table th {
+  background: var(--vet-gray) !important; font-size: 11px !important; font-weight: 700 !important;
+  text-transform: uppercase; letter-spacing: .6px;
+}
+.v-data-table tbody tr:hover { background: var(--vet-gray-light); }
+.v-chip { font-weight: 600; letter-spacing: .3px; }
+
+/* ---- Login (vista dividida) ---- */
+.login-wrapper { display: flex; min-height: 100vh; width: 100%; }
+.login-left {
+  flex: 1 1 50%;
+  background-color: var(--vet-green-light);
+  background-image: url('/ilustracion-patitas.svg');
+  background-size: cover; background-position: center;
+}
+.login-right { flex: 1 1 50%; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-right-inner { width: 100%; max-width: 420px; }
+.login-logo { height: 84px; width: auto; }
+.login-title { color: var(--vet-green); font-weight: 700; font-size: 1.4rem; text-align: center; margin-bottom: 4px; }
+.login-subtitle { color: var(--vet-blue); font-weight: 500; text-align: center; margin: 0; }
+.login-footer-note { color: var(--vet-text-light); font-size: .8rem; text-align: center; margin-top: 32px; }
+@media (max-width: 959px) { .login-left { display: none; } }

@@ -1,0 +1,5 @@
+target/
+.git/
+*.iml
+Dockerfile
+.dockerignore

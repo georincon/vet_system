@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: veterinaria
+
+  datasource:
+    url: ${VET_DB_URL:jdbc:postgresql://localhost:5256/veterinaria}
+    username: ${VET_DB_USER:veterinaria_app}
+    password: ${VET_DB_PASSWORD:veterinaria_dev_pwd}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway es el unico dueno del esquema; Hibernate solo valida.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: America/Bogota
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  jackson:
+    time-zone: America/Bogota
+    deserialization:
+      fail-on-unknown-properties: true
+
+server:
+  port: ${VET_PORT:9010}
+
+vet:
+  jwt:
+    # Clave de desarrollo; en produccion se sobreescribe con VET_JWT_SECRET (min 32 chars).
+    secret: ${VET_JWT_SECRET:cambie-esta-clave-secreta-de-desarrollo-0123456789abcdef}
+    expiration-minutes: ${VET_JWT_EXPIRATION_MINUTES:480}
+  cors:
+    allowed-origins: ${VET_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  security:
+    seed-admin: ${VET_SEED_ADMIN:true}
+  catalogos:
+    seed: ${VET_SEED_CATALOGOS:true}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
