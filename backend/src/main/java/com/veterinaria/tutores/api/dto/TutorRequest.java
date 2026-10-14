@@ -7,7 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/** Alta/edicion de tutor. {@code activo} es opcional (por defecto activo al crear; sin cambio al editar). */
+/** Alta/edicion de tutor. Los consentimientos (aceptaEmail/Whatsapp/Sms, autorizaTratamientoDatos) son opcionales:
+ * ausentes = sin cambio (false al crear). {@code activo} es opcional (por defecto activo al crear; sin cambio al editar). */
 public record TutorRequest(
         @NotNull(message = "El tipo de documento es obligatorio") TipoDocumento tipoDocumento,
         @NotBlank(message = "El numero de documento es obligatorio")
@@ -22,5 +23,9 @@ public record TutorRequest(
         @Size(max = 255, message = "La direccion no puede exceder 255 caracteres") String direccion,
         @Size(max = 120, message = "La ciudad no puede exceder 120 caracteres") String ciudad,
         String notas,
-        Boolean activo) {
+        Boolean activo,
+        Boolean aceptaEmail,
+        Boolean aceptaWhatsapp,
+        Boolean aceptaSms,
+        Boolean autorizaTratamientoDatos) {
 }

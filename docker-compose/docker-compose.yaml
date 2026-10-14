@@ -1,0 +1,65 @@
+# Levanta todo el sistema veterinario: PostgreSQL + API (Spring Boot) + web (Vue/nginx).
+#   cd docker-compose && docker compose up -d --build
+# Puertos elegidos para no chocar con otros proyectos:
+#   web 8090 · API 9010 · PostgreSQL 5256 (sobreescribibles en .env, ver .env.example)
+name: vet_sistem
+
+services:
+  db:
+    image: postgres:18
+    container_name: veterinaria-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: veterinaria
+      POSTGRES_USER: veterinaria_app
+      POSTGRES_PASSWORD: ${VET_DB_PASSWORD:-veterinaria_dev_pwd}
+    ports:
+      - "${VET_DB_PORT:-5256}:5432"
+    volumes:
+      # PostgreSQL 18+: el volumen va en /var/lib/postgresql (subdirectorio versionado).
+      - veterinaria_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veterinaria_app -d veterinaria"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ../backend
+    container_name: veterinaria-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      VET_PORT: "9010"
+      VET_DB_URL: jdbc:postgresql://db:5432/veterinaria
+      VET_DB_USER: veterinaria_app
+      VET_DB_PASSWORD: ${VET_DB_PASSWORD:-veterinaria_dev_pwd}
+      VET_JWT_SECRET: ${VET_JWT_SECRET:-cambie-esta-clave-secreta-de-desarrollo-0123456789abcdef}
+      VET_CORS_ALLOWED_ORIGINS: ${VET_CORS_ALLOWED_ORIGINS:-http://localhost:8090}
+      # En produccion: false (crea el usuario admin/admin y los catalogos iniciales).
+      VET_SEED_ADMIN: ${VET_SEED_ADMIN:-true}
+      VET_SEED_CATALOGOS: ${VET_SEED_CATALOGOS:-true}
+    ports:
+      - "${VET_API_PORT:-9010}:9010"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9010' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ../frontend
+    container_name: veterinaria-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${VET_WEB_PORT:-8090}:8090"
+
+volumes:
+  veterinaria_pgdata:

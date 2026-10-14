@@ -89,6 +89,21 @@ public class TutorService {
         tutor.setDireccion(Textos.limpiar(r.direccion()));
         tutor.setCiudad(Textos.limpiar(r.ciudad()));
         tutor.setNotas(Textos.limpiar(r.notas()));
+        if (r.aceptaEmail() != null) {
+            tutor.setAceptaEmail(r.aceptaEmail());
+        }
+        if (r.aceptaWhatsapp() != null) {
+            tutor.setAceptaWhatsapp(r.aceptaWhatsapp());
+        }
+        if (r.aceptaSms() != null) {
+            tutor.setAceptaSms(r.aceptaSms());
+        }
+        if (r.autorizaTratamientoDatos() != null) {
+            if (r.autorizaTratamientoDatos() && !tutor.isAutorizaTratamientoDatos()) {
+                tutor.setFechaAutorizacionDatos(java.time.Instant.now());
+            }
+            tutor.setAutorizaTratamientoDatos(r.autorizaTratamientoDatos());
+        }
     }
 
     private static ConflictException documentoDuplicado(String numero) {

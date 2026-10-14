@@ -42,6 +42,25 @@ vet:
     seed-admin: ${VET_SEED_ADMIN:true}
   catalogos:
     seed: ${VET_SEED_CATALOGOS:true}
+  # ---- Fase 3: comunicaciones y recordatorios ----
+  clinica:
+    nombre: ${VET_CLINICA_NOMBRE:Clinica Veterinaria}
+  public-url: ${VET_PUBLIC_URL:http://localhost:9010}   # base de los enlaces de baja (opt-out) de los correos
+  mail:
+    # Si host esta vacio se usa el adaptador simulado (registra y marca ENVIADO_SIMULADO).
+    host: ${VET_MAIL_HOST:}
+    port: ${VET_MAIL_PORT:587}
+    username: ${VET_MAIL_USER:}
+    password: ${VET_MAIL_PASSWORD:}
+    from: ${VET_MAIL_FROM:no-reply@veterinaria.local}
+    starttls: ${VET_MAIL_STARTTLS:true}
+  recordatorios:
+    enabled: ${VET_RECORDATORIOS_ENABLED:true}
+    cron: ${VET_RECORDATORIOS_CRON:0 0 8 * * *}        # generacion diaria (hora de la clinica)
+    hora-envio: ${VET_RECORDATORIOS_HORA_ENVIO:08:00}   # hora en que se programan los envios
+    intervalo-envio-ms: ${VET_RECORDATORIOS_INTERVALO_MS:300000}   # cola/reintentos
+    max-intentos: ${VET_RECORDATORIOS_MAX_INTENTOS:3}
+    reintento-minutos: ${VET_RECORDATORIOS_REINTENTO_MIN:30}
 
 springdoc:
   swagger-ui:

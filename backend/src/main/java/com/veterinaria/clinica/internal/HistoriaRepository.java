@@ -28,6 +28,11 @@ public class HistoriaRepository {
                      case when cv.lote is not null then 'Lote ' || cv.lote end, 'APLICADA'
                 from consulta_vacuna cv join consulta c on c.id = cv.consulta_id
                where c.paciente_id = :paciente and c.activo
+                 and not exists (select 1 from inmunizacion i2 where i2.consulta_vacuna_id = cv.id)
+              union all
+              select 'DESPARASITACION', 2, d.fecha_aplicacion, d.id, d.producto,
+                     case when d.lote is not null then 'Lote ' || d.lote end, d.estado
+                from desparasitacion d where d.paciente_id = :paciente and d.estado = 'APLICADA'
               union all
               select 'PESO', 3, pr.fecha, pr.id, 'Peso registrado', pr.peso_kg::text || ' kg', null
                 from peso_registro pr where pr.paciente_id = :paciente

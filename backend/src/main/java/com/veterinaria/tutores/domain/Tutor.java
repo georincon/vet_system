@@ -55,6 +55,22 @@ public class Tutor {
     @Column(columnDefinition = "text")
     private String notas;
 
+    /** Consentimiento de contacto por canal (Ley 1581/2012; columnas de V13). */
+    @Column(name = "acepta_email", nullable = false)
+    private boolean aceptaEmail;
+
+    @Column(name = "acepta_whatsapp", nullable = false)
+    private boolean aceptaWhatsapp;
+
+    @Column(name = "acepta_sms", nullable = false)
+    private boolean aceptaSms;
+
+    @Column(name = "autoriza_tratamiento_datos", nullable = false)
+    private boolean autorizaTratamientoDatos;
+
+    @Column(name = "fecha_autorizacion_datos")
+    private Instant fechaAutorizacionDatos;
+
     @Column(nullable = false)
     private boolean activo = true;
 

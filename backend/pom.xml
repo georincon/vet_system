@@ -23,6 +23,7 @@
         <lombok.version>1.18.48</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <springdoc.version>3.1.1</springdoc.version>
+        <openpdf.version>2.0.3</openpdf.version>
     </properties>
 
     <dependencyManagement>
@@ -90,6 +91,17 @@
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-starter-core</artifactId>
+        </dependency>
+
+        <!-- Fase 3: correo (recordatorios) y PDF del carnet -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>${openpdf.version}</version>
         </dependency>
 
         <!-- Documentacion de API -->

@@ -4,7 +4,7 @@ Sistema de gestion para una clinica veterinaria. Monorepo con:
 
 - `backend/` - Spring Boot 4.1.1 + Spring Modulith 2.1.1 + Postgres 18 (Flyway) + JWT.
 - `frontend/` - Vue 3 + Vuetify 4 + Vite 8 + TypeScript + Pinia + vue-router.
-- `docker-compose.yml` - Postgres 18 local para desarrollo.
+- `docker-compose/docker-compose.yaml` - stack completo para desarrollo.
 
 ## Puertos
 

@@ -15,11 +15,16 @@ public record TutorResponse(
         String direccion,
         String ciudad,
         String notas,
-        boolean activo) {
+        boolean activo,
+        boolean aceptaEmail,
+        boolean aceptaWhatsapp,
+        boolean aceptaSms,
+        boolean autorizaTratamientoDatos) {
 
     public static TutorResponse from(Tutor t) {
         return new TutorResponse(t.getId(), t.getTipoDocumento(), t.getNumeroDocumento(), t.getNombres(),
                 t.getApellidos(), t.getTelefono(), t.getTelefonoAlt(), t.getEmail(), t.getDireccion(),
-                t.getCiudad(), t.getNotas(), t.isActivo());
+                t.getCiudad(), t.getNotas(), t.isActivo(), t.isAceptaEmail(), t.isAceptaWhatsapp(),
+                t.isAceptaSms(), t.isAutorizaTratamientoDatos());
     }
 }

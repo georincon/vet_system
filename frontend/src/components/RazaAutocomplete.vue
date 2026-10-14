@@ -27,9 +27,14 @@ const items = computed(() =>
 
 const selected = computed(() => props.razas.find((r) => r.id === props.modelValue) ?? null)
 
-function filter(_value: unknown, query: string, item?: { raw: { search: string } }): boolean {
+interface Opcion { title: string; value: number; raw: Raza; search: string }
+function opc(item: unknown): Opcion {
+  return item as Opcion
+}
+
+function filter(_value: unknown, query: string, item?: unknown): boolean {
   const q = query.toLowerCase()
-  return !q || (item?.raw.search ?? '').toLowerCase().includes(q)
+  return !q || ((item as { raw?: Opcion } | undefined)?.raw?.search ?? '').toLowerCase().includes(q)
 }
 </script>
 
@@ -48,8 +53,8 @@ function filter(_value: unknown, query: string, item?: { raw: { search: string }
       @update:model-value="emit('update:modelValue', ($event as number | null) ?? null)"
     >
       <template #item="{ props: itemProps, item }">
-        <v-list-item v-bind="itemProps" :title="item.raw.title" :subtitle="detalle(item.raw.raw)">
-          <template v-if="item.raw.raw.potencialmentePeligrosa" #append>
+        <v-list-item v-bind="itemProps" :title="opc(item).title" :subtitle="detalle(opc(item).raw)">
+          <template v-if="opc(item).raw.potencialmentePeligrosa" #append>
             <v-chip size="x-small" color="error" variant="tonal" prepend-icon="mdi-alert">Pot. peligrosa</v-chip>
           </template>
         </v-list-item>

@@ -10,6 +10,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.veterinaria.citas.application.CitaService;
 import com.veterinaria.citas.domain.Cita;
 import com.veterinaria.citas.internal.CitaRepository;
+import com.veterinaria.clinica.ConsultaCerrada;
 import com.veterinaria.clinica.api.dto.ConsultaMedicamentoDto;
 import com.veterinaria.clinica.api.dto.ConsultaRequest;
 import com.veterinaria.clinica.api.dto.ConsultaResponse;
@@ -55,11 +57,12 @@ public class ConsultaService {
     private final VeterinarioLookup veterinarioLookup;
     private final PesoService pesoService;
     private final SedePrincipal sedePrincipal;
+    private final ApplicationEventPublisher eventos;
 
     public ConsultaService(ConsultaRepository consultaRepository, CitaRepository citaRepository,
             CitaService citaService, PacienteRepository pacienteRepository,
             PlantillaSoapRepository plantillaRepository, VeterinarioLookup veterinarioLookup,
-            PesoService pesoService, SedePrincipal sedePrincipal) {
+            PesoService pesoService, SedePrincipal sedePrincipal, ApplicationEventPublisher eventos) {
         this.consultaRepository = consultaRepository;
         this.citaRepository = citaRepository;
         this.citaService = citaService;
@@ -68,6 +71,7 @@ public class ConsultaService {
         this.veterinarioLookup = veterinarioLookup;
         this.pesoService = pesoService;
         this.sedePrincipal = sedePrincipal;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
@@ -180,6 +184,11 @@ public class ConsultaService {
         if (cerrada.getCita() != null) {
             citaService.marcarAtendida(cerrada.getCita().getId());
         }
+        // Las vacunas de la consulta pasan a inmunizaciones (modulo inmunizacion) tras confirmarse el cierre.
+        eventos.publishEvent(new ConsultaCerrada(cerrada.getId(), cerrada.getPaciente().getId(),
+                cerrada.getVeterinario().getId(), cerrada.getFecha(),
+                cerrada.getVacunas().stream().map(v -> new ConsultaCerrada.VacunaAplicada(v.getId(), v.getNombre(),
+                        v.getLote(), v.getFechaAplicacion(), v.getProximaFecha())).toList()));
         return ConsultaResponse.from(cerrada);
     }
 

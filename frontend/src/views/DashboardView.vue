@@ -1,65 +1,104 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { getResumen } from '@/api/dashboard'
+import EstadoChip from '@/components/EstadoChip.vue'
+import PageHeader from '@/components/PageHeader.vue'
 import { useAuthStore } from '@/stores/auth'
-import { listUsuarios } from '@/api/usuarios'
+import { errorText } from '@/utils/errors'
+import { etiquetaFecha, hhmm } from '@/utils/fecha'
+import type { DashboardResumen } from '@/types'
 
 const auth = useAuthStore()
-
-const usuariosCount = ref<number | null>(null)
+const resumen = ref<DashboardResumen | null>(null)
 const loading = ref(true)
-const loadingMessage = ref('')
+const error = ref('')
 
-async function loadCounts() {
+interface Tarjeta { label: string; value: number | undefined; icon: string; color: string; to?: string }
+const tarjetas = computed<Tarjeta[]>(() => {
+  const r = resumen.value
+  const clinica = auth.can.clinicaRead
+  return [
+    { label: 'Citas hoy', value: r?.citasHoy, icon: 'mdi-calendar-today', color: 'primary', to: '/agenda' },
+    { label: 'Citas pendientes', value: r?.citasPendientes, icon: 'mdi-calendar-clock-outline', color: 'warning', to: '/agenda' },
+    { label: 'Pacientes activos', value: r?.pacientesActivos, icon: 'mdi-paw', color: 'primary', to: '/pacientes' },
+    { label: 'Tutores activos', value: r?.tutoresActivos, icon: 'mdi-account-heart-outline', color: 'secondary', to: '/tutores' },
+    { label: 'Consultas abiertas', value: r?.consultasAbiertas, icon: 'mdi-stethoscope', color: 'info', to: clinica ? '/consultas' : undefined },
+    { label: 'Consultas del mes', value: r?.consultasMes, icon: 'mdi-clipboard-text-clock-outline', color: 'primary', to: clinica ? '/consultas' : undefined },
+    { label: 'Vacunas por vencer (30 d)', value: r?.vacunasPorVencer, icon: 'mdi-needle', color: 'error' },
+  ]
+})
+
+const atajos = computed(() => [
+  { title: 'Agenda', icon: 'mdi-calendar-week', to: '/agenda', show: true },
+  { title: 'Nueva cita', icon: 'mdi-calendar-plus', to: '/agenda', show: auth.can.agendaWrite },
+  { title: 'Sala de espera', icon: 'mdi-seat', to: '/agenda', show: true },
+  { title: 'Pacientes', icon: 'mdi-paw-outline', to: '/pacientes', show: true },
+  { title: 'Tutores', icon: 'mdi-account-heart-outline', to: '/tutores', show: true },
+  { title: 'Consultas', icon: 'mdi-stethoscope', to: '/consultas', show: auth.can.clinicaRead },
+  { title: 'Auditoría', icon: 'mdi-shield-search', to: '/auditoria', show: auth.isAdmin },
+].filter((a) => a.show))
+
+async function load() {
   loading.value = true
+  error.value = ''
   try {
-    const page = await listUsuarios(undefined, 0, 1)
-    usuariosCount.value = page.totalElements
-  } catch {
-    usuariosCount.value = null
-    loadingMessage.value = 'No se pudo consultar el estado de la API'
+    resumen.value = await getResumen()
+  } catch (e) {
+    error.value = errorText(e, 'No se pudo cargar el resumen')
   } finally {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  void loadCounts()
-})
+onMounted(load)
 </script>
 
 <template>
   <div>
-    <div class="vet-header">
-      <div>
-        <h1>Dashboard</h1>
-        <p>Bienvenido, {{ auth.usuario?.nombre || auth.usuario?.username }}</p>
-      </div>
-      <v-btn variant="flat" prepend-icon="mdi-refresh" :loading="loading" @click="loadCounts">
-        Actualizar
-      </v-btn>
-    </div>
+    <PageHeader title="Dashboard" :subtitle="`Bienvenido, ${auth.usuario?.nombre || auth.usuario?.username}`">
+      <v-btn variant="flat" prepend-icon="mdi-refresh" :loading="loading" @click="load">Actualizar</v-btn>
+    </PageHeader>
+
+    <v-alert v-if="error" type="error" variant="tonal" class="mb-4" :text="error" />
 
     <h2 class="vet-section-title">Resumen</h2>
     <v-row>
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card :to="'/usuarios'" class="vet-stat-card h-100" elevation="0" border>
-          <v-card-text class="d-flex flex-column align-center py-8">
-            <v-avatar color="primary" size="56" class="mb-4">
-              <v-icon icon="mdi-account-group-outline" color="white" size="28" />
-            </v-avatar>
-            <div class="text-h3 font-weight-bold">
-              <v-progress-circular v-if="loading" indeterminate :size="28" :width="3" />
-              <template v-else>{{ usuariosCount ?? '—' }}</template>
+      <v-col v-for="t in tarjetas" :key="t.label" cols="6" md="4" lg="3">
+        <v-card :to="t.to" class="vet-stat-card h-100" elevation="0" border>
+          <v-card-text class="d-flex flex-column align-center py-6">
+            <v-avatar :color="t.color" size="48" class="mb-3"><v-icon :icon="t.icon" color="white" size="26" /></v-avatar>
+            <div class="text-h4 font-weight-bold">
+              <v-progress-circular v-if="loading" indeterminate :size="24" :width="3" />
+              <template v-else>{{ t.value ?? '—' }}</template>
             </div>
-            <div class="text-body-1 text-medium-emphasis mt-4">Usuarios del sistema</div>
+            <div class="text-body-2 text-medium-emphasis mt-2 text-center">{{ t.label }}</div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <div class="vet-info-bar mt-8">
-      <strong>Estado del sistema:</strong>
-      {{ loadingMessage || 'Autenticación, usuarios, tutores, pacientes, citas y consultas habilitados.' }}
-    </div>
+    <v-row class="mt-4">
+      <v-col cols="12" md="7">
+        <h2 class="vet-section-title">Próximas citas</h2>
+        <v-card border elevation="0">
+          <v-list v-if="resumen?.proximasCitas.length" lines="two">
+            <v-list-item v-for="c in resumen.proximasCitas" :key="c.id" to="/agenda" prepend-icon="mdi-calendar-clock"
+              :title="`${etiquetaFecha(c.fecha)} · ${hhmm(c.horaInicio)} · ${c.paciente.nombre}`"
+              :subtitle="`${c.veterinario.nombre}${c.motivo ? ' · ' + c.motivo : ''}`">
+              <template #append><EstadoChip :estado="c.estado" /></template>
+            </v-list-item>
+          </v-list>
+          <v-card-text v-else class="text-medium-emphasis">{{ loading ? 'Cargando…' : 'No hay citas próximas.' }}</v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="5">
+        <h2 class="vet-section-title">Atajos</h2>
+        <div class="d-flex flex-wrap ga-2">
+          <v-btn v-for="a in atajos" :key="a.title" :to="a.to" variant="tonal" color="primary" :prepend-icon="a.icon">{{ a.title }}</v-btn>
+        </div>
+        <div class="vet-info-bar mt-6 text-body-2">
+          <strong>Rol:</strong> {{ auth.usuario?.rol }}. Los módulos visibles dependen de su rol.
+        </div>
+      </v-col>
+    </v-row>
   </div>
 </template>
