@@ -42,6 +42,12 @@ services:
       # En produccion: false (crea el usuario admin/admin y los catalogos iniciales).
       VET_SEED_ADMIN: ${VET_SEED_ADMIN:-true}
       VET_SEED_CATALOGOS: ${VET_SEED_CATALOGOS:-true}
+      # Archivos clinicos (imagenes, PDF, DICOM, consentimientos): directorio del volumen veterinaria_archivos.
+      VET_ARCHIVOS_RUTA: /data/archivos
+      # Clave de analizadores/LIS (cabecera X-API-Key en /api/laboratorio/integracion/**). Vacia = deshabilitada.
+      VET_LAB_API_KEY: ${VET_LAB_API_KEY:-}
+    volumes:
+      - veterinaria_archivos:/data/archivos
     ports:
       - "${VET_API_PORT:-9010}:9010"
     healthcheck:
@@ -63,3 +69,4 @@ services:
 
 volumes:
   veterinaria_pgdata:
+  veterinaria_archivos:

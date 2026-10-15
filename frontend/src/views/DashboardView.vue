@@ -4,6 +4,7 @@ import { getResumen } from '@/api/dashboard'
 import EstadoChip from '@/components/EstadoChip.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useAuthStore } from '@/stores/auth'
+import { cop } from '@/utils/dinero'
 import { errorText } from '@/utils/errors'
 import { etiquetaFecha, hhmm } from '@/utils/fecha'
 import type { DashboardResumen } from '@/types'
@@ -13,19 +14,27 @@ const resumen = ref<DashboardResumen | null>(null)
 const loading = ref(true)
 const error = ref('')
 
-interface Tarjeta { label: string; value: number | undefined; icon: string; color: string; to?: string }
+interface Tarjeta { label: string; value: number | string | undefined; icon: string; color: string; to?: string }
 const tarjetas = computed<Tarjeta[]>(() => {
   const r = resumen.value
   const clinica = auth.can.clinicaRead
-  return [
+  const base: Tarjeta[] = [
     { label: 'Citas hoy', value: r?.citasHoy, icon: 'mdi-calendar-today', color: 'primary', to: '/agenda' },
     { label: 'Citas pendientes', value: r?.citasPendientes, icon: 'mdi-calendar-clock-outline', color: 'warning', to: '/agenda' },
     { label: 'Pacientes activos', value: r?.pacientesActivos, icon: 'mdi-paw', color: 'primary', to: '/pacientes' },
     { label: 'Tutores activos', value: r?.tutoresActivos, icon: 'mdi-account-heart-outline', color: 'secondary', to: '/tutores' },
     { label: 'Consultas abiertas', value: r?.consultasAbiertas, icon: 'mdi-stethoscope', color: 'info', to: clinica ? '/consultas' : undefined },
     { label: 'Consultas del mes', value: r?.consultasMes, icon: 'mdi-clipboard-text-clock-outline', color: 'primary', to: clinica ? '/consultas' : undefined },
-    { label: 'Vacunas por vencer (30 d)', value: r?.vacunasPorVencer, icon: 'mdi-needle', color: 'error' },
+    { label: 'Vacunas por vencer (30 d)', value: r?.vacunasPorVencer, icon: 'mdi-needle', color: 'error', to: '/vacunacion/pendientes' },
   ]
+  // Fase 4: ventas solo si el backend las entrega (null para VET/AUX); stock según rol.
+  const f4: Tarjeta[] = []
+  const facturacion = auth.can.facturacionOperar ? '/facturacion?tab=documentos' : undefined
+  if (r?.ventasHoy !== null && r?.ventasHoy !== undefined) f4.push({ label: 'Ventas de hoy', value: cop(r.ventasHoy), icon: 'mdi-cash-multiple', color: 'success', to: facturacion })
+  if (r?.ventasMes !== null && r?.ventasMes !== undefined) f4.push({ label: 'Ventas del mes', value: cop(r.ventasMes), icon: 'mdi-chart-line', color: 'success', to: auth.can.reportesVentas ? '/facturacion?tab=reportes' : facturacion })
+  if (auth.can.inventarioRead && r?.stockBajo !== null && r?.stockBajo !== undefined) f4.push({ label: 'Ítems bajo el mínimo', value: r.stockBajo, icon: 'mdi-package-down', color: 'warning', to: '/inventario?tab=alertas' })
+  if (auth.can.inventarioRead && r?.lotesPorVencer !== null && r?.lotesPorVencer !== undefined) f4.push({ label: 'Lotes por vencer (30 d)', value: r.lotesPorVencer, icon: 'mdi-timer-sand', color: 'error', to: '/inventario?tab=lotes' })
+  return [...base, ...f4]
 })
 
 const atajos = computed(() => [
@@ -35,6 +44,11 @@ const atajos = computed(() => [
   { title: 'Pacientes', icon: 'mdi-paw-outline', to: '/pacientes', show: true },
   { title: 'Tutores', icon: 'mdi-account-heart-outline', to: '/tutores', show: true },
   { title: 'Consultas', icon: 'mdi-stethoscope', to: '/consultas', show: auth.can.clinicaRead },
+  { title: 'Vacunación pendiente', icon: 'mdi-needle', to: '/vacunacion/pendientes', show: true },
+  { title: 'Comunicaciones', icon: 'mdi-email-fast-outline', to: '/comunicaciones', show: auth.can.comunicacionesRead },
+  { title: 'Inventario', icon: 'mdi-package-variant-closed', to: '/inventario', show: auth.can.inventarioRead },
+  { title: 'Caja y facturas', icon: 'mdi-cash-register', to: '/facturacion', show: auth.can.presupuestosRead },
+  { title: 'Compras', icon: 'mdi-truck-delivery-outline', to: '/compras', show: auth.can.comprasRead },
   { title: 'Auditoría', icon: 'mdi-shield-search', to: '/auditoria', show: auth.isAdmin },
 ].filter((a) => a.show))
 

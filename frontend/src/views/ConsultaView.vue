@@ -3,6 +3,8 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { cerrarConsulta, getConsulta, listPlantillas, updateConsulta } from '@/api/consultas'
 import { getPaciente, listAlergias } from '@/api/pacientes'
+import { listPresupuestos } from '@/api/facturacion'
+import { getTutor } from '@/api/tutores'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EstadoChip from '@/components/EstadoChip.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -15,6 +17,8 @@ import { useUiStore } from '@/stores/ui'
 import { TIPOS_CONSULTA, TRIAJES } from '@/utils/clinica'
 import { errorText } from '@/utils/errors'
 import { etiquetaFecha, etiquetaInstante } from '@/utils/fecha'
+import { cop } from '@/utils/dinero'
+import type { Presupuesto } from '@/types/fase4'
 import type { Alergia, Consulta, Paciente, PlantillaSoap, TipoConsulta, Triaje } from '@/types'
 
 const route = useRoute()
@@ -43,6 +47,15 @@ const original = ref('')
 const cerrada = computed(() => !!consulta.value?.cerrada || consulta.value?.estado === 'CERRADA')
 const lecturaTexto = computed(() => cerrada.value || !auth.can.clinicaWrite)
 const lecturaSignos = computed(() => cerrada.value || !auth.can.signos)
+/** Cargo generado al cerrar (presupuesto borrador creado por el evento ConsultaCerrada). */
+const presupuestos = ref<Presupuesto[]>([])
+const cargandoCargo = ref(false)
+const cargoVisible = computed(() => cerrada.value && auth.can.presupuestosRead)
+async function cargarCargo() {
+  if (!cargoVisible.value) return
+  cargandoCargo.value = true
+  try { presupuestos.value = (await listPresupuestos({ consultaId: id.value, size: 5 })).items } catch { presupuestos.value = [] } finally { cargandoCargo.value = false }
+}
 const dirty = computed(() => JSON.stringify(form) !== original.value)
 
 const plantillasOpt = computed(() => {
@@ -61,6 +74,16 @@ function cargarForm(c: Consulta) {
   original.value = JSON.stringify(form)
 }
 
+/** Aviso de habeas data: el tutor principal sin consentimiento de correo no recibirá recordatorios. */
+const sinConsentimientoCorreo = ref(false)
+async function cargarConsentimiento(p: Paciente) {
+  sinConsentimientoCorreo.value = false
+  const principal = p.tutores?.find((t) => t.esPrincipal) ?? p.tutores?.[0]
+  if (!principal) return
+  if (principal.aceptaEmail !== undefined) { sinConsentimientoCorreo.value = !principal.aceptaEmail; return }
+  try { sinConsentimientoCorreo.value = !(await getTutor(principal.id)).aceptaEmail } catch { /* sin acceso: no se avisa */ }
+}
+
 async function load(soloConsulta = false) {
   try {
     const c = await getConsulta(id.value)
@@ -74,6 +97,8 @@ async function load(soloConsulta = false) {
       paciente.value = p
       alergias.value = a
       plantillas.value = pl
+      void cargarConsentimiento(p)
+      void cargarCargo()
     } else if (paciente.value) {
       paciente.value = await getPaciente(c.paciente.id)
     }
@@ -112,6 +137,7 @@ async function cerrar() {
     if (dirty.value && !(await guardar(true))) return
     consulta.value = await cerrarConsulta(id.value)
     cargarForm(consulta.value)
+    window.setTimeout(() => void cargarCargo(), 1200)
     ui.showSuccess('Consulta cerrada. Ya no puede modificarse; use addendums para aclaraciones.')
     confirmarCierre.value = false
   } catch (e) {
@@ -168,6 +194,8 @@ watch(id, () => { loading.value = true; void load() })
         <span v-if="consulta.cerrada === false && !auth.can.clinicaWrite"> · Su rol permite solo lectura y registro de signos vitales.</span>
       </v-alert>
 
+      <v-alert v-if="sinConsentimientoCorreo" type="warning" variant="tonal" density="compact" class="mb-4" icon="mdi-email-off-outline"
+        text="El tutor principal no tiene consentimiento de correo: no se le enviarán recordatorios de vacunas ni citas. Actualice sus consentimientos en Tutores." />
       <div class="vet-info-bar mb-4">
         <div class="d-flex flex-wrap align-center ga-3">
           <strong class="text-h6">{{ consulta.paciente.nombre }}</strong>
@@ -225,6 +253,22 @@ watch(id, () => { loading.value = true; void load() })
           <v-btn variant="tonal" prepend-icon="mdi-content-save-outline" :loading="saving" :disabled="!dirty" @click="guardar()">Guardar cambios</v-btn>
           <v-btn color="primary" variant="flat" prepend-icon="mdi-lock-check-outline" @click="confirmarCierre = true">Cerrar consulta</v-btn>
         </v-card-actions>
+      </v-card>
+
+      <v-card v-if="cargoVisible" border elevation="0" class="mb-4">
+        <v-card-text>
+          <div class="d-flex align-center ga-2">
+            <h2 class="vet-section-title flex-grow-1 mb-0">Cargo de la consulta</h2>
+            <v-btn variant="text" size="small" prepend-icon="mdi-refresh" :loading="cargandoCargo" @click="cargarCargo">Actualizar</v-btn>
+          </div>
+          <p v-if="!presupuestos.length" class="text-medium-emphasis mt-2">{{ cargandoCargo ? 'Buscando…' : 'Aún no hay un presupuesto generado para esta consulta (se crea al cerrarla; actualice en unos segundos).' }}</p>
+          <v-list v-else lines="two">
+            <v-list-item v-for="pr in presupuestos" :key="pr.id" :to="`/facturacion?tab=documentos&presupuesto=${pr.id}`" prepend-icon="mdi-file-document-outline"
+              :title="`${pr.codigo} · ${cop(pr.total)}`" :subtitle="`${pr.items.length} renglón(es) · ${pr.tutor.nombre}`">
+              <template #append><EstadoChip :estado="pr.estado" /></template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
       </v-card>
 
       <v-card v-if="cerrada" border elevation="0" class="mb-4">

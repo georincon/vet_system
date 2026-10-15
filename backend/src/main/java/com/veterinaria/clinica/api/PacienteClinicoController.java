@@ -86,9 +86,9 @@ public class PacienteClinicoController {
     }
 
     @GetMapping("/historia")
-    @Operation(summary = "Linea de tiempo paginada (consultas, vacunas, pesos, alergias), mas reciente primero")
+    @Operation(summary = "Linea de tiempo paginada (consultas, vacunas, pesos, alergias, laboratorio, imagen, patologia, procedimientos, archivos), mas reciente primero; tipo admite varios separados por coma")
     public PageResponse<HistoriaItem> historia(@PathVariable Long pacienteId,
-            @RequestParam(required = false) @Pattern(regexp = "CONSULTA|VACUNA|PESO|ALERGIA", message = "Tipo no valido") String tipo,
+            @RequestParam(required = false) @Pattern(regexp = "(CONSULTA|VACUNA|DESPARASITACION|PESO|ALERGIA|LABORATORIO|IMAGEN|PATOLOGIA|PROCEDIMIENTO|CIRUGIA|ARCHIVO)(,(CONSULTA|VACUNA|DESPARASITACION|PESO|ALERGIA|LABORATORIO|IMAGEN|PATOLOGIA|PROCEDIMIENTO|CIRUGIA|ARCHIVO))*", message = "Tipo no valido (admite varios separados por coma)") String tipo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return service.historia(pacienteId, tipo, PageRequests.of(page, size, Sort.unsorted()));

@@ -28,6 +28,12 @@ spring:
     deserialization:
       fail-on-unknown-properties: true
 
+  servlet:
+    multipart:
+      # El limite real por tipo lo aplica vet.archivos.* (50 MB; DICOM mayor); aqui el tope tecnico del contenedor.
+      max-file-size: ${VET_MULTIPART_MAX_FILE:260MB}
+      max-request-size: ${VET_MULTIPART_MAX_REQUEST:262MB}
+
 server:
   port: ${VET_PORT:9010}
 
@@ -61,6 +67,16 @@ vet:
     intervalo-envio-ms: ${VET_RECORDATORIOS_INTERVALO_MS:300000}   # cola/reintentos
     max-intentos: ${VET_RECORDATORIOS_MAX_INTENTOS:3}
     reintento-minutos: ${VET_RECORDATORIOS_REINTENTO_MIN:30}
+
+  # ---- Etapa A: archivos clinicos y laboratorio ----
+  archivos:
+    ruta: ${VET_ARCHIVOS_RUTA:./data/archivos}          # en Docker: /data/archivos (volumen veterinaria_archivos)
+    max-bytes: ${VET_ARCHIVOS_MAX_BYTES:52428800}       # 50 MB (imagenes, PDF, texto)
+    max-bytes-dicom: ${VET_ARCHIVOS_MAX_BYTES_DICOM:268435456}   # 256 MB para DICOM
+    miniatura-px: ${VET_ARCHIVOS_MINIATURA_PX:400}
+  laboratorio:
+    # Clave de analizadores/LIS para /api/laboratorio/integracion/** (cabecera X-API-Key). Vacia = integracion deshabilitada.
+    api-key: ${VET_LAB_API_KEY:}
 
 springdoc:
   swagger-ui:

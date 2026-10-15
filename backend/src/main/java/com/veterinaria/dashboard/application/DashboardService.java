@@ -10,6 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.veterinaria.dashboard.api.dto.DashboardResumen;
 import com.veterinaria.dashboard.api.dto.DashboardResumen.Persona;
 import com.veterinaria.dashboard.api.dto.DashboardResumen.ProximaCita;
+import com.veterinaria.facturacion.VentasApi;
+import com.veterinaria.inmunizacion.application.PendientesService;
+import com.veterinaria.inventario.StockApi;
+import com.veterinaria.shared.security.UsuarioActual;
 import com.veterinaria.shared.time.ZonaClinica;
 
 /** Indicadores agregados calculados con SQL directo (solo lectura). */
@@ -21,9 +25,15 @@ public class DashboardService {
     private static final int MAX_PROXIMAS = 5;
 
     private final JdbcClient jdbc;
+    private final PendientesService pendientes;
+    private final VentasApi ventas;
+    private final StockApi stock;
 
-    public DashboardService(JdbcClient jdbc) {
+    public DashboardService(JdbcClient jdbc, PendientesService pendientes, VentasApi ventas, StockApi stock) {
         this.jdbc = jdbc;
+        this.pendientes = pendientes;
+        this.ventas = ventas;
+        this.stock = stock;
     }
 
     @Transactional(readOnly = true)
@@ -48,12 +58,11 @@ public class DashboardService {
         long consultasMes = jdbc.sql("""
                 select count(*) from consulta where activo and fecha >= :inicio and fecha < :fin
                 """).param("inicio", inicioMes).param("fin", inicioMes.plusMonths(1)).query(Long.class).single();
-        long vacunas = jdbc.sql("""
-                select (select count(*) from inmunizacion i join paciente p on p.id = i.paciente_id
-                         where i.estado = 'APLICADA' and p.activo and not p.fallecido
-                           and i.fecha_proxima_dosis between :hoy and :limite)
-                     + (select count(*) from consulta_vacuna cv join consulta c on c.id = cv.consulta_id
-                         where c.activo and cv.proxima_fecha between :hoy and :limite)
+        // Proximas dosis reales (ultima aplicacion vigente por paciente/producto, modulo inmunizacion) mas las
+        // vacunas anotadas en consultas todavia ABIERTAS (al cerrar pasan a inmunizacion y no se cuentan dos veces).
+        long vacunas = pendientes.contarPorVencer(DIAS_VACUNAS) + jdbc.sql("""
+                select count(*) from consulta_vacuna cv join consulta c on c.id = cv.consulta_id
+                 where c.activo and c.estado = 'ABIERTA' and cv.proxima_fecha between :hoy and :limite
                 """).param("hoy", hoy).param("limite", limiteVacunas).query(Long.class).single();
 
         List<ProximaCita> proximas = jdbc.sql("""
@@ -76,8 +85,13 @@ public class DashboardService {
                         rs.getString("estado"), rs.getString("motivo")))
                 .list();
 
+        // Ventas solo para quien opera caja/facturacion; el inventario es de lectura para todos los roles.
+        String rol = UsuarioActual.rol().orElse("");
+        boolean veVentas = rol.equals("ADMIN") || rol.equals("RECEPCION");
+        VentasApi.ResumenVentas v = veVentas ? ventas.resumen() : null;
         return new DashboardResumen(citasHoy, citasPendientes, pacientes, tutores, abiertas, consultasMes, vacunas,
-                proximas);
+                proximas, v == null ? null : v.hoy(), v == null ? null : v.mes(), stock.contarItemsBajoMinimo(),
+                stock.contarLotesPorVencer(DIAS_VACUNAS));
     }
 
     private long contar(String sql, String param, Object valor) {

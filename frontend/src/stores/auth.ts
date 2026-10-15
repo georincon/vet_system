@@ -31,6 +31,28 @@ export const useAuthStore = defineStore('auth', () => {
     clinicaRead: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
     clinicaWrite: hasRole('ADMIN', 'VETERINARIO'),
     signos: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    /** Fase 3: catálogos y pendientes de lectura para todos; aplicar con supervisión (AUXILIAR). */
+    inmunizacionAplicar: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    inmunizacionAnular: hasRole('ADMIN', 'VETERINARIO'),
+    inmunizacionCatalogos: hasRole('ADMIN'),
+    comunicacionesRead: hasRole('ADMIN', 'RECEPCION'),
+    comunicacionesWrite: hasRole('ADMIN'),
+    /** Fase 4 (docs/api-fase4.md, matriz de roles). */
+    inventarioRead: hasRole('ADMIN', 'RECEPCION', 'VETERINARIO', 'AUXILIAR'),
+    inventarioWrite: hasRole('ADMIN'),
+    inventarioUso: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    inventarioCostos: hasRole('ADMIN'),
+    controladosRead: hasRole('ADMIN', 'VETERINARIO'),
+    comprasRead: hasRole('ADMIN'),
+    comprasWrite: hasRole('ADMIN'),
+    /** Caja, POS, facturas, pagos, cartera y abonos. */
+    facturacionOperar: hasRole('ADMIN', 'RECEPCION'),
+    /** VETERINARIO solo ve los presupuestos de sus consultas. */
+    presupuestosRead: hasRole('ADMIN', 'RECEPCION', 'VETERINARIO'),
+    notasCredito: hasRole('ADMIN'),
+    reportesVentas: hasRole('ADMIN'),
+    reportesCartera: hasRole('ADMIN', 'RECEPCION'),
+    ventasDashboard: hasRole('ADMIN', 'RECEPCION'),
   }))
 
   function setSession(data: LoginResponse) {

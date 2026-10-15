@@ -17,7 +17,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * contenedor (ciclo de vida de JUnit), se evita que el contexto cacheado de
  * Spring apunte a un contenedor ya reciclado entre clases de prueba.
  */
-@SpringBootTest(webEnvironment = WebEnvironment.MOCK)
+@SpringBootTest(webEnvironment = WebEnvironment.MOCK, properties = "vet.recordatorios.enabled=false")
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 abstract class BaseIntegrationTest {

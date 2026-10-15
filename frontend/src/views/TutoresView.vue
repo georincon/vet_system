@@ -42,6 +42,10 @@ const form = reactive<TutorRequest>({
   ciudad: '',
   notas: '',
   activo: true,
+  aceptaEmail: false,
+  aceptaWhatsapp: false,
+  aceptaSms: false,
+  autorizaTratamientoDatos: false,
 })
 
 const pacientesDialog = ref(false)
@@ -92,6 +96,10 @@ function resetForm() {
   form.ciudad = ''
   form.notas = ''
   form.activo = true
+  form.aceptaEmail = false
+  form.aceptaWhatsapp = false
+  form.aceptaSms = false
+  form.autorizaTratamientoDatos = false
 }
 
 function openCreate() {
@@ -114,6 +122,10 @@ function openEdit(tutor: Tutor) {
   form.ciudad = tutor.ciudad ?? ''
   form.notas = tutor.notas ?? ''
   form.activo = tutor.activo
+  form.aceptaEmail = !!tutor.aceptaEmail
+  form.aceptaWhatsapp = !!tutor.aceptaWhatsapp
+  form.aceptaSms = !!tutor.aceptaSms
+  form.autorizaTratamientoDatos = !!tutor.autorizaTratamientoDatos
   dialog.value = true
 }
 
@@ -193,6 +205,7 @@ onMounted(() => {
           { title: 'Teléfono', key: 'telefono' },
           { title: 'Correo', key: 'email' },
           { title: 'Ciudad', key: 'ciudad' },
+          { title: 'Consentimientos', key: 'consentimientos', sortable: false },
           { title: 'Estado', key: 'activo' },
           { title: 'Acciones', key: 'acciones', sortable: false, align: 'end' },
         ]"
@@ -207,6 +220,19 @@ onMounted(() => {
           <div class="font-weight-medium">{{ item.numeroDocumento }}</div>
         </template>
         <template #item.nombreCompleto="{ item }">{{ tutorNombre(item) }}</template>
+        <template #item.consentimientos="{ item }">
+          <div class="d-flex flex-wrap ga-1">
+            <v-chip size="x-small" variant="tonal" :color="item.aceptaEmail ? 'success' : 'grey'"
+              :prepend-icon="item.aceptaEmail ? 'mdi-email-check-outline' : 'mdi-email-off-outline'"
+              :text="item.aceptaEmail ? 'Correo' : 'Sin correo'"
+              :title="item.aceptaEmail ? 'Acepta recordatorios por correo' : 'Sin consentimiento de correo: no recibirá recordatorios'" />
+            <v-chip v-if="item.aceptaWhatsapp" size="x-small" variant="tonal" color="success" text="WhatsApp" />
+            <v-chip v-if="item.aceptaSms" size="x-small" variant="tonal" color="success" text="SMS" />
+            <v-chip size="x-small" variant="tonal" :color="item.autorizaTratamientoDatos ? 'success' : 'warning'"
+              :prepend-icon="item.autorizaTratamientoDatos ? 'mdi-shield-check-outline' : 'mdi-shield-alert-outline'"
+              :text="item.autorizaTratamientoDatos ? 'Datos autorizados' : 'Sin habeas data'" />
+          </div>
+        </template>
         <template #item.activo="{ item }">
           <v-chip
             size="small"
@@ -301,7 +327,21 @@ onMounted(() => {
                 <v-textarea v-model="form.notas" label="Notas" rows="3" density="comfortable" auto-grow />
               </v-col>
             </v-row>
-            <v-switch v-model="form.activo" label="Tutor activo" color="primary" hide-details />
+            <h3 class="vet-section-title mt-2">Consentimientos y habeas data</h3>
+            <div class="vet-info-bar text-body-2 mb-3">
+              En cumplimiento de la Ley 1581 de 2012 (protección de datos personales), el tratamiento de los datos del tutor requiere su
+              autorización previa, expresa e informada. Los recordatorios de vacunas y citas solo se envían por los canales que el tutor
+              haya aceptado y puede darse de baja en cualquier momento. Sin consentimiento de correo, el sistema no crea ni envía recordatorios por email.
+            </div>
+            <v-checkbox v-model="form.autorizaTratamientoDatos" color="primary" hide-details density="compact"
+              label="El tutor autoriza el tratamiento de sus datos personales (habeas data, Ley 1581)" />
+            <v-checkbox v-model="form.aceptaEmail" color="primary" hide-details density="compact"
+              label="Acepta recibir recordatorios y comunicaciones por correo electrónico"
+              :disabled="!form.email" />
+            <v-checkbox v-model="form.aceptaWhatsapp" color="primary" hide-details density="compact" label="Acepta recibir mensajes por WhatsApp" />
+            <v-checkbox v-model="form.aceptaSms" color="primary" hide-details density="compact" label="Acepta recibir mensajes por SMS" />
+            <v-alert v-if="form.aceptaEmail && !form.email" type="warning" variant="tonal" density="compact" class="my-2" text="Registre un correo electrónico para poder enviar recordatorios." />
+            <v-switch v-model="form.activo" label="Tutor activo" color="primary" hide-details class="mt-2" />
           </v-form>
         </v-card-text>
         <v-card-actions class="px-4 pb-4">

@@ -403,7 +403,7 @@ public class InmunizacionService {
      *
      * @return numero de inmunizaciones creadas
      */
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public int registrarDesdeConsulta(ConsultaCerrada evento) {
         Paciente paciente = paciente(evento.pacienteId());
         int creadas = 0;

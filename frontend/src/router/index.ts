@@ -72,6 +72,48 @@ export const router = createRouter({
           meta: { title: 'Historia del paciente', roles: CLINICA },
         },
         {
+          path: 'pacientes/:id(\\d+)/vacunacion',
+          name: 'vacunacion-paciente',
+          redirect: (to) => ({ name: 'historia', params: { id: to.params.id }, query: { tab: 'vacunacion' } }),
+          meta: { title: 'Vacunación del paciente', roles: CLINICA },
+        },
+        {
+          path: 'vacunacion/pendientes',
+          name: 'vacunacion-pendientes',
+          component: () => import('@/views/PendientesVacunarView.vue'),
+          meta: { title: 'Pendientes de vacunar' },
+        },
+        {
+          path: 'inmunizacion/catalogos',
+          name: 'inmunizacion-catalogos',
+          component: () => import('@/views/CatalogosInmunizacionView.vue'),
+          meta: { title: 'Catálogos de inmunización', roles: ['ADMIN'] },
+        },
+        {
+          path: 'comunicaciones',
+          name: 'comunicaciones',
+          component: () => import('@/views/ComunicacionesView.vue'),
+          meta: { title: 'Comunicaciones', roles: ['ADMIN', 'RECEPCION'] },
+        },
+        {
+          path: 'inventario',
+          name: 'inventario',
+          component: () => import('@/views/InventarioView.vue'),
+          meta: { title: 'Inventario', roles: ['ADMIN', 'RECEPCION', 'VETERINARIO', 'AUXILIAR'] },
+        },
+        {
+          path: 'compras',
+          name: 'compras',
+          component: () => import('@/views/ComprasView.vue'),
+          meta: { title: 'Compras', roles: ['ADMIN'] },
+        },
+        {
+          path: 'facturacion',
+          name: 'facturacion',
+          component: () => import('@/views/FacturacionView.vue'),
+          meta: { title: 'Caja y facturas', roles: ['ADMIN', 'RECEPCION', 'VETERINARIO'] },
+        },
+        {
           path: 'auditoria',
           name: 'auditoria',
           component: () => import('@/views/AuditoriaView.vue'),

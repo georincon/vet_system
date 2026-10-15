@@ -129,3 +129,20 @@ body { margin: 0; background: #fff; }
 .login-subtitle { color: var(--vet-blue); font-weight: 500; text-align: center; margin: 0; }
 .login-footer-note { color: var(--vet-text-light); font-size: .8rem; text-align: center; margin-top: 32px; }
 @media (max-width: 959px) { .login-left { display: none; } }
+
+/* ---- Filtros de listados (Fase 4) ---- */
+.vet-filtro { flex: 0 1 200px; min-width: 150px; }
+.vet-filtro-ancho { min-width: 240px; }
+.vet-monto { font-variant-numeric: tabular-nums; }
+.vet-total-grande { font-size: 1.6rem; font-weight: 700; color: var(--vet-green); }
+.vet-celda-num { min-width: 90px; }
+.vet-celda-precio { min-width: 120px; }
+.vet-linea-falta { background: rgba(198, 40, 40, .08); }
+.vet-barra { height: 10px; border-radius: 4px; background: var(--vet-green); min-width: 2px; }
+.vet-barra-pista { background: var(--vet-gray); border-radius: 4px; }
+.vet-grafico { border: 1px solid var(--vet-border); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.vet-svg { width: 100%; min-width: 360px; height: auto; display: block; }
+.vet-barra-svg { fill: var(--vet-green); }
+.vet-barra-svg:hover { fill: var(--vet-green-dark); }
+.vet-eje { stroke: var(--vet-border); stroke-width: 1; }
+.vet-eje-texto { fill: var(--vet-text-light); font-size: 10px; }

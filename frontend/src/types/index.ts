@@ -255,6 +255,10 @@ export interface Tutor {
   ciudad?: string
   notas?: string
   activo: boolean
+  aceptaEmail?: boolean
+  aceptaWhatsapp?: boolean
+  aceptaSms?: boolean
+  autorizaTratamientoDatos?: boolean
 }
 
 export interface TutorRequest {
@@ -269,6 +273,10 @@ export interface TutorRequest {
   ciudad?: string
   notas?: string
   activo?: boolean
+  aceptaEmail?: boolean
+  aceptaWhatsapp?: boolean
+  aceptaSms?: boolean
+  autorizaTratamientoDatos?: boolean
 }
 
 export interface TutorResumen {
@@ -279,6 +287,7 @@ export interface TutorResumen {
   email?: string
   esPrincipal: boolean
   parentesco?: string
+  aceptaEmail?: boolean
 }
 
 export interface Paciente {
@@ -484,7 +493,7 @@ export interface PesoRegistro {
   registradoPor?: string | null
 }
 
-export type TipoHistoria = 'CONSULTA' | 'VACUNA' | 'PESO' | 'ALERGIA'
+export type TipoHistoria = 'CONSULTA' | 'VACUNA' | 'DESPARASITACION' | 'PESO' | 'ALERGIA'
 
 export interface HistoriaItem {
   tipo: TipoHistoria
@@ -580,6 +589,11 @@ export interface DashboardResumen {
   consultasAbiertas: number
   consultasMes: number
   vacunasPorVencer: number
+  /** Null para VETERINARIO y AUXILIAR. */
+  ventasHoy?: number | null
+  ventasMes?: number | null
+  stockBajo?: number | null
+  lotesPorVencer?: number | null
   proximasCitas: ProximaCita[]
 }
 

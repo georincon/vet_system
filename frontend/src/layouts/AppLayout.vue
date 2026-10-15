@@ -36,18 +36,30 @@ const groups = computed<NavGroup[]>(() => {
         ...(auth.can.clinicaRead
           ? [{ title: 'Consultas', icon: 'mdi-stethoscope', to: '/consultas' }]
           : []),
+        { title: 'Vacunación', icon: 'mdi-needle', to: '/vacunacion/pendientes' },
+        ...(auth.can.inventarioRead ? [{ title: 'Inventario', icon: 'mdi-package-variant-closed', to: '/inventario' }] : []),
+        ...(auth.can.comprasRead ? [{ title: 'Compras', icon: 'mdi-truck-delivery-outline', to: '/compras' }] : []),
+        ...(auth.can.presupuestosRead ? [{ title: 'Caja y facturas', icon: 'mdi-cash-register', to: '/facturacion' }] : []),
       ],
     },
   ]
 
-  if (auth.isAdmin) {
+  if (auth.can.comunicacionesRead) {
     all.push({
       title: 'Sistema',
-      items: [
+      items: [{ title: 'Comunicaciones', icon: 'mdi-email-fast-outline', to: '/comunicaciones' }],
+    })
+  }
+
+  if (auth.isAdmin) {
+    const sistema = all.find((g) => g.title === 'Sistema')
+    const extra: NavItem[] = [
+      { title: 'Catálogos de vacunación', icon: 'mdi-book-medical', to: '/inmunizacion/catalogos' },
         { title: 'Usuarios', icon: 'mdi-account-cog-outline', to: '/usuarios' },
         { title: 'Auditoría', icon: 'mdi-shield-search', to: '/auditoria' },
-      ],
-    })
+    ]
+    if (sistema) sistema.items.push(...extra)
+    else all.push({ title: 'Sistema', items: extra })
   }
 
   return all

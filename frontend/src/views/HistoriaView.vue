@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { createAlergia, createPeso, deleteAlergia, getHistoria, getPaciente, listAlergias, listPesos } from '@/api/pacientes'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EstadoChip from '@/components/EstadoChip.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import VacunacionPanel from '@/components/vacunacion/VacunacionPanel.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { errorText } from '@/utils/errors'
@@ -12,6 +13,9 @@ import { etiquetaFecha, hoy } from '@/utils/fecha'
 import type { Alergia, HistoriaItem, Paciente, PesoRegistro, SeveridadAlergia, TipoAlergia, TipoHistoria } from '@/types'
 
 const route = useRoute()
+const router = useRouter()
+const tab = ref<'historia' | 'vacunacion'>(route.query.tab === 'vacunacion' ? 'vacunacion' : 'historia')
+watch(tab, (t) => { void router.replace({ query: t === 'vacunacion' ? { tab: t } : {} }) })
 const auth = useAuthStore()
 const ui = useUiStore()
 const id = computed(() => Number(route.params.id))
@@ -29,10 +33,11 @@ const loading = ref(false)
 const META: Record<TipoHistoria, { icon: string; color: string; label: string }> = {
   CONSULTA: { icon: 'mdi-stethoscope', color: 'primary', label: 'Consulta' },
   VACUNA: { icon: 'mdi-needle', color: 'info', label: 'Vacuna' },
+  DESPARASITACION: { icon: 'mdi-bug-outline', color: 'secondary', label: 'Desparasitación' },
   PESO: { icon: 'mdi-scale-bathroom', color: 'secondary', label: 'Peso' },
   ALERGIA: { icon: 'mdi-alert-circle-outline', color: 'error', label: 'Alergia' },
 }
-const TIPOS = [{ title: 'Todo', value: null }, ...(Object.keys(META) as TipoHistoria[]).map((k) => ({ title: META[k].label + 's', value: k }))]
+const TIPOS = [{ title: 'Todo', value: null }, ...(Object.keys(META) as TipoHistoria[]).map((k) => ({ title: META[k].label + (k === 'DESPARASITACION' ? 'es' : 's'), value: k }))]
 
 const activas = computed(() => alergias.value.filter((a) => a.activo))
 const ultimoPeso = computed(() => pesos.value[0] ?? null)
@@ -142,9 +147,17 @@ onMounted(() => { void loadResumen(); void loadHistoria() })
           </v-card-text>
         </v-card>
       </v-col>
-      <v-col cols="12" md="8">
+      <v-col cols="12" :md="tab === 'vacunacion' ? 12 : 8">
         <v-card border elevation="0" class="h-100">
-          <v-card-text>
+          <v-tabs v-model="tab" color="primary" density="comfortable">
+            <v-tab value="historia" prepend-icon="mdi-timeline-text-outline">Línea de tiempo</v-tab>
+            <v-tab value="vacunacion" prepend-icon="mdi-needle">Vacunación</v-tab>
+          </v-tabs>
+          <v-divider />
+          <v-card-text v-if="tab === 'vacunacion'">
+            <VacunacionPanel :paciente="paciente" @cambio="loadHistoria" />
+          </v-card-text>
+          <v-card-text v-show="tab === 'historia'">
             <div class="d-flex align-center flex-wrap ga-2 mb-2">
               <h2 class="vet-section-title flex-grow-1 mb-0">Línea de tiempo <span class="text-caption text-medium-emphasis">({{ total }})</span></h2>
               <v-btn-toggle v-model="tipo" density="compact" color="primary" variant="outlined" divided>

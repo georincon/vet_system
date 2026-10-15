@@ -56,6 +56,9 @@ DO $$ BEGIN
 END $$;
 
 -- ---------------------------------------------------------------- 3) ENVIADO_SIMULADO
+-- 'ENVIADO_SIMULADO' mide 16 caracteres: se amplian las columnas VARCHAR(12) de estado.
+ALTER TABLE recordatorio ALTER COLUMN estado TYPE VARCHAR(20);
+ALTER TABLE envio_log    ALTER COLUMN estado TYPE VARCHAR(20);
 ALTER TABLE recordatorio DROP CONSTRAINT IF EXISTS ck_rec_estado;
 ALTER TABLE recordatorio ADD CONSTRAINT ck_rec_estado
     CHECK (estado IN ('PENDIENTE','ENVIANDO','ENVIADO','ENVIADO_SIMULADO','FALLIDO','CANCELADO','OMITIDO_OPTOUT'));

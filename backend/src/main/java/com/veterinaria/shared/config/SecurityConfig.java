@@ -27,6 +27,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -36,6 +37,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.veterinaria.shared.error.ApiError;
+import com.veterinaria.shared.security.ApiKeyAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
 import tools.jackson.databind.json.JsonMapper;
@@ -53,6 +55,8 @@ public class SecurityConfig {
     private static final String VETERINARIO = "VETERINARIO";
     private static final String RECEPCION = "RECEPCION";
     private static final String AUXILIAR = "AUXILIAR";
+    /** Rol tecnico (no es un rol de usuario) que concede la API key de analizadores/LIS. */
+    private static final String LAB_INTEGRACION = "INTEGRACION_LAB";
 
     private static final String[] RUTAS_PUBLICAS = {
         "/api/auth/login",
@@ -64,6 +68,10 @@ public class SecurityConfig {
 
     @Value("${vet.jwt.secret}")
     private String jwtSecret;
+
+    /** Clave de los analizadores/LIS (cabecera X-API-Key); vacia = integracion deshabilitada. */
+    @Value("${vet.laboratorio.api-key:}")
+    private String laboratorioApiKey;
 
     @Value("${vet.cors.allowed-origins:http://localhost:5173}")
     private String[] allowedOrigins;
@@ -144,8 +152,74 @@ public class SecurityConfig {
                                 .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
                         .requestMatchers("/api/consultas/**", "/api/clinica/**", "/api/pacientes/*/alergias/**",
                                 "/api/pacientes/*/alergias").hasAnyRole(ADMIN, VETERINARIO)
+                        // Fase 3 - inmunizacion: ADMIN/VETERINARIO registran; AUXILIAR registra con veterinario supervisor
+                        // (se valida en el servicio) pero no anula; RECEPCION no accede a datos clinicos del paciente.
+                        .requestMatchers(HttpMethod.POST, "/api/pacientes/*/inmunizaciones")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.POST, "/api/pacientes/*/inmunizaciones/*/anular")
+                                .hasAnyRole(ADMIN, VETERINARIO)
+                        .requestMatchers(HttpMethod.GET, "/api/pacientes/*/inmunizaciones",
+                                "/api/pacientes/*/esquema-sugerido", "/api/pacientes/*/carnet.pdf")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.GET, "/api/inmunizacion/**").authenticated()
+                        .requestMatchers("/api/inmunizacion/**").hasRole(ADMIN)
+                        // Fase 3 - comunicaciones: opt-out publico (token firmado); job manual solo ADMIN;
+                        // plantillas/reglas: lectura ADMIN+RECEPCION, escritura ADMIN; recordatorios: ADMIN+RECEPCION.
+                        .requestMatchers(HttpMethod.GET, "/api/comunicaciones/optout").permitAll()
+                        .requestMatchers("/api/comunicaciones/ejecutar").hasRole(ADMIN)
+                        .requestMatchers(HttpMethod.GET, "/api/comunicaciones/plantillas/**",
+                                "/api/comunicaciones/reglas/**").hasAnyRole(ADMIN, RECEPCION)
+                        .requestMatchers("/api/comunicaciones/plantillas/**", "/api/comunicaciones/reglas/**")
+                                .hasRole(ADMIN)
+                        .requestMatchers("/api/comunicaciones/**").hasAnyRole(ADMIN, RECEPCION)
+                        // Fase 4 - inventario: lectura para todos los roles; uso clinico ADMIN/VET/AUX; libro de
+                        // controlados ADMIN/VET; compras, proveedores, ajustes, salidas y escritura de catalogo solo ADMIN.
+                        .requestMatchers(HttpMethod.GET, "/api/inventario/controlados").hasAnyRole(ADMIN, VETERINARIO)
+                        .requestMatchers(HttpMethod.GET, "/api/inventario/items", "/api/inventario/items/*",
+                                "/api/inventario/categorias", "/api/inventario/bodegas", "/api/inventario/lotes",
+                                "/api/inventario/lotes/*", "/api/inventario/movimientos", "/api/inventario/alertas")
+                                .hasAnyRole(ADMIN, RECEPCION, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.POST, "/api/inventario/movimientos/uso")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers("/api/inventario/**").hasRole(ADMIN)
+                        // Fase 4 - facturacion: ADMIN y RECEPCION operan caja, facturas, pagos, POS y cartera; el
+                        // VETERINARIO solo lee presupuestos (el servicio filtra a sus consultas); notas credito,
+                        // resoluciones, reintento DIAN y reporte de ventas solo ADMIN; AUXILIAR sin acceso.
+                        .requestMatchers(HttpMethod.GET, "/api/facturacion/presupuestos", "/api/facturacion/presupuestos/*")
+                                .hasAnyRole(ADMIN, RECEPCION, VETERINARIO)
+                        .requestMatchers("/api/facturacion/resoluciones/**", "/api/facturacion/reportes/ventas")
+                                .hasRole(ADMIN)
+                        .requestMatchers(HttpMethod.POST, "/api/facturacion/facturas/*/notas-credito",
+                                "/api/facturacion/facturas/*/dian/reintentar").hasRole(ADMIN)
+                        .requestMatchers("/api/facturacion/**").hasAnyRole(ADMIN, RECEPCION)
+                        // Etapa A - archivos clinicos: ADMIN/VETERINARIO/AUXILIAR suben y leen; baja logica solo ADMIN/VETERINARIO;
+                        // RECEPCION sin acceso.
+                        .requestMatchers(HttpMethod.DELETE, "/api/archivos/*").hasAnyRole(ADMIN, VETERINARIO)
+                        .requestMatchers("/api/archivos", "/api/archivos/**", "/api/pacientes/*/archivos")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        // Etapa A - laboratorio/imagen/patologia: analizadores y LIS usan solo la API key (no JWT); ADMIN/VETERINARIO
+                        // ordenan, validan, corrigen e informan; AUXILIAR registra muestra, captura e importa (no valida).
+                        .requestMatchers("/api/laboratorio/integracion/**").hasRole(LAB_INTEGRACION)
+                        .requestMatchers(HttpMethod.GET, "/api/laboratorio/examenes", "/api/laboratorio/examenes/*",
+                                "/api/laboratorio/plantilla-csv", "/api/laboratorio/ordenes", "/api/laboratorio/ordenes/*",
+                                "/api/laboratorio/ordenes/*/informe.pdf", "/api/pacientes/*/laboratorio",
+                                "/api/pacientes/*/laboratorio/tendencia").hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.POST, "/api/laboratorio/ordenes/*/muestra", "/api/laboratorio/importar")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.PUT, "/api/laboratorio/ordenes/*/items/*/resultados")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers("/api/laboratorio/**").hasAnyRole(ADMIN, VETERINARIO)
+                        // Etapa A - procedimientos y cirugia: AUXILIAR lee y registra monitoreo anestesico.
+                        .requestMatchers(HttpMethod.POST, "/api/procedimientos/*/monitoreo-anestesico")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.GET, "/api/procedimientos", "/api/procedimientos/*",
+                                "/api/procedimientos/*/monitoreo-anestesico", "/api/pacientes/*/procedimientos")
+                                .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers("/api/procedimientos/**").hasAnyRole(ADMIN, VETERINARIO)
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
+                .addFilterAfter(new ApiKeyAuthenticationFilter("/api/laboratorio/integracion/", "X-API-Key", laboratorioApiKey,
+                        LAB_INTEGRACION), BearerTokenAuthenticationFilter.class)
                 .exceptionHandling(e -> e.authenticationEntryPoint(entryPoint).accessDeniedHandler(deniedHandler))
                 .oauth2ResourceServer(o -> o
                         .jwt(j -> j.jwtAuthenticationConverter(converter))
