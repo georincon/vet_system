@@ -146,3 +146,44 @@ body { margin: 0; background: #fff; }
 .vet-barra-svg:hover { fill: var(--vet-green-dark); }
 .vet-eje { stroke: var(--vet-border); stroke-width: 1; }
 .vet-eje-texto { fill: var(--vet-text-light); font-size: 10px; }
+
+/* ---- Etapa C: documentación clínica ---- */
+.vet-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.vet-informe { border: 1px solid var(--vet-border); border-radius: 8px; overflow: hidden; }
+.vet-informe-cabecera { background: var(--vet-gray); padding: 12px 16px; border-bottom: 1px solid var(--vet-border); }
+.vet-fila-critica { background: rgba(179, 38, 30, .08); border-left: 4px solid var(--vet-danger); }
+.vet-fila-alerta { background: rgba(194, 112, 61, .08); }
+.vet-tabla-resultados td, .vet-tabla-resultados th { white-space: nowrap; }
+.vet-valor-input { max-width: 130px; min-width: 100px; }
+.vet-dropzone {
+  border: 2px dashed var(--vet-border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.vet-dropzone:hover, .vet-dropzone:focus-visible, .vet-dropzone--activa { border-color: var(--vet-green); background: var(--vet-green-light); outline: none; }
+.vet-miniatura { width: 120px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid var(--vet-border); background: var(--vet-gray); }
+.vet-visor { display: flex; align-items: center; justify-content: center; overflow: auto; background: #1e1e1e; min-height: 50vh; max-height: 70vh; }
+.vet-visor img { transition: transform .15s ease; transform-origin: center center; }
+.vet-linea-tendencia { fill: none; stroke: var(--vet-blue); stroke-width: 2; }
+.vet-banda-ref { fill: rgba(0, 104, 55, .12); }
+.vet-punto { stroke: #fff; stroke-width: 1.5; }
+.vet-evento-tarjeta { border-left: 4px solid var(--vet-border); }
+
+/* ---- Archivos (worker B) ---- */
+.vet-arch-mini { display: block; }
+.vet-arch-icono { display: flex; align-items: center; justify-content: center; color: var(--vet-text-light); }
+.vet-arch-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+.vet-arch-item { width: 132px; }
+.vet-arch-miniatura-btn { background: none; border: 0; padding: 0; cursor: pointer; border-radius: 6px; }
+.vet-arch-miniatura-btn:focus-visible { outline: 3px solid var(--vet-blue); outline-offset: 2px; }
+.vet-arch-nombre { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vet-arch-cola { border: 1px solid var(--vet-border); border-radius: 8px; padding: 12px; }
+.vet-arch-cola-img { width: 72px; height: 72px; flex-shrink: 0; }
+.vet-arch-visor-img { max-width: none; }
+.vet-arch-hash { font-family: monospace; font-size: 12px; }
+.vet-proc-texto { white-space: pre-wrap; }
+.vet-proc-consent-texto { max-height: 260px; overflow: auto; white-space: pre-wrap; background: var(--vet-gray); border-radius: 6px; padding: 12px; }
+.vet-proc-fuera { color: var(--vet-danger); font-weight: 700; }
+.vet-proc-tabla td, .vet-proc-tabla th { white-space: nowrap; }
+.vet-proc-grafico { width: 100%; height: auto; max-height: 180px; }
+.vet-arch-visor-ajuste { max-width: 100%; max-height: 68vh; }
+.vet-proc-spo2 { stroke: var(--vet-green); stroke-dasharray: 5 3; }

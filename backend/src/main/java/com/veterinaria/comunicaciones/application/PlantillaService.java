@@ -24,7 +24,8 @@ import com.veterinaria.shared.text.Textos;
 public class PlantillaService {
 
     /** Variables que el motor sabe resolver. */
-    public static final Set<String> VARIABLES = Set.of("tutor", "paciente", "vacuna", "fecha", "hora", "clinica", "sede");
+    public static final Set<String> VARIABLES = Set.of("tutor", "paciente", "vacuna", "fecha", "hora", "clinica", "sede",
+            "documento", "enlace");
 
     private static final Pattern VARIABLE = Pattern.compile("\\{\\{\\s*(\\w+)\\s*}}");
 

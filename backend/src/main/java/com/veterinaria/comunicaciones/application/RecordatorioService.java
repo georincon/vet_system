@@ -70,7 +70,7 @@ public class RecordatorioService {
         this.tx = new TransactionTemplate(txm);
         this.pendientes = pendientes;
         this.optOut = optOut;
-        this.canales = adaptadores.stream().collect(Collectors.toMap(CanalEnvio::canal, Function.identity()));
+        this.canales = adaptadores.stream().filter(CanalEnvio::admiteRecordatorios).collect(Collectors.toMap(CanalEnvio::canal, Function.identity()));
         this.horaEnvio = LocalTime.parse(horaEnvio);
         this.maxIntentos = maxIntentos;
         this.reintentoMinutos = reintentoMinutos;
@@ -405,8 +405,52 @@ public class RecordatorioService {
                     """).param("id", id).query((rs, n) -> new Contexto(rs.getDate("fecha").toLocalDate(),
                     rs.getTime("hora") == null ? null : rs.getTime("hora").toLocalTime(), rs.getString("paciente"), null))
                     .optional().orElse(null);
+            case "control_seguimiento" -> jdbc.sql("""
+                    select c.fecha_sugerida as fecha, null as producto, p.nombre as paciente
+                      from control_seguimiento c join paciente p on p.id = c.paciente_id
+                     where c.id = :id and c.estado = 'PENDIENTE' and c.fecha_sugerida >= current_date
+                    """).param("id", id).query(RecordatorioService::mapearContexto).optional().orElse(null);
             default -> null;
         };
+    }
+
+    /** Resultado de programar el recordatorio de un control: {@code id} null y {@code detalle} con el motivo si se omitio. */
+    public record ProgramacionControl(Long id, String detalle) {
+    }
+
+    /** Programa (EMAIL, un dia antes a la hora de envio) el recordatorio de un control de seguimiento. */
+    @Transactional
+    public ProgramacionControl programarControl(Long controlId, Long pacienteId, LocalDate fecha) {
+        Tutor tutor = tutorPrincipal(pacienteId);
+        if (tutor == null || !tutor.activo()) {
+            return new ProgramacionControl(null, "El paciente no tiene tutor activo");
+        }
+        switch (contacto(tutor, "EMAIL")) {
+            case SIN_CONSENTIMIENTO -> {
+                return new ProgramacionControl(null, "El tutor no tiene consentimiento de correo vigente (o esta dado de baja)");
+            }
+            case SIN_CONTACTO -> {
+                return new ProgramacionControl(null, "El tutor no tiene correo registrado");
+            }
+            default -> { }
+        }
+        if (!canales.containsKey("EMAIL")) {
+            return new ProgramacionControl(null, "Canal EMAIL no disponible");
+        }
+        Long plantilla = jdbc.sql("select id from plantilla_mensaje where codigo = 'CONTROL_SEGUIMIENTO' and canal = 'EMAIL' and idioma = 'es' and activo")
+                .query(Long.class).optional().orElse(null);
+        if (plantilla == null) {
+            return new ProgramacionControl(null, "Plantilla CONTROL_SEGUIMIENTO no disponible");
+        }
+        Instant ideal = ZonaClinica.instante(fecha.minusDays(1), horaEnvio);
+        Instant programado = ideal.isBefore(Instant.now()) ? Instant.now() : ideal;
+        Long id = jdbc.sql("""
+                insert into recordatorio (tutor_id, paciente_id, tipo, referencia_tabla, referencia_id, canal, plantilla_id,
+                                          programado_para, estado)
+                values (:t, :p, 'CONTROL', 'control_seguimiento', :ref, 'EMAIL', :pl, :prog, 'PENDIENTE') returning id
+                """).param("t", tutor.id()).param("p", pacienteId).param("ref", controlId).param("pl", plantilla)
+                .param("prog", Timestamp.from(programado)).query(Long.class).single();
+        return new ProgramacionControl(id, null);
     }
 
     private static Contexto mapearContexto(ResultSet rs, int n) throws SQLException {

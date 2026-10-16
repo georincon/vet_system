@@ -216,6 +216,13 @@ public class SecurityConfig {
                                 "/api/procedimientos/*/monitoreo-anestesico", "/api/pacientes/*/procedimientos")
                                 .hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
                         .requestMatchers("/api/procedimientos/**").hasAnyRole(ADMIN, VETERINARIO)
+                        // Etapa B - formula en PDF por receta (misma regla que las consultas: ADMIN/VET/AUX leen); verificacion de
+                        // documentos y descarga por enlace seguro: PUBLICOS; compartir con el tutor: ADMIN/VETERINARIO (AUXILIAR
+                        // solo si vet.compartir.auxiliar-habilitado, validado en el servicio; RECEPCION nunca); perfil profesional.
+                        .requestMatchers(HttpMethod.GET, "/api/recetas/*/formula.pdf").hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers(HttpMethod.GET, "/api/verificar/*", "/api/publico/documentos/*").permitAll()
+                        .requestMatchers("/api/compartir", "/api/compartir/**").hasAnyRole(ADMIN, VETERINARIO, AUXILIAR)
+                        .requestMatchers("/api/perfil/profesional").hasAnyRole(ADMIN, VETERINARIO)
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
                 .addFilterAfter(new ApiKeyAuthenticationFilter("/api/laboratorio/integracion/", "X-API-Key", laboratorioApiKey,

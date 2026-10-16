@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getResumen } from '@/api/dashboard'
+import { listOrdenes } from '@/api/laboratorio'
 import EstadoChip from '@/components/EstadoChip.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -11,6 +12,8 @@ import type { DashboardResumen } from '@/types'
 
 const auth = useAuthStore()
 const resumen = ref<DashboardResumen | null>(null)
+/** Órdenes abiertas de la bandeja de laboratorio (el resumen del backend no trae este dato: se usa el total de la bandeja). */
+const ordenesLabPendientes = ref<number | null>(null)
 const loading = ref(true)
 const error = ref('')
 
@@ -34,6 +37,9 @@ const tarjetas = computed<Tarjeta[]>(() => {
   if (r?.ventasMes !== null && r?.ventasMes !== undefined) f4.push({ label: 'Ventas del mes', value: cop(r.ventasMes), icon: 'mdi-chart-line', color: 'success', to: auth.can.reportesVentas ? '/facturacion?tab=reportes' : facturacion })
   if (auth.can.inventarioRead && r?.stockBajo !== null && r?.stockBajo !== undefined) f4.push({ label: 'Ítems bajo el mínimo', value: r.stockBajo, icon: 'mdi-package-down', color: 'warning', to: '/inventario?tab=alertas' })
   if (auth.can.inventarioRead && r?.lotesPorVencer !== null && r?.lotesPorVencer !== undefined) f4.push({ label: 'Lotes por vencer (30 d)', value: r.lotesPorVencer, icon: 'mdi-timer-sand', color: 'error', to: '/inventario?tab=lotes' })
+  if (auth.can.laboratorioRead && ordenesLabPendientes.value !== null) {
+    f4.push({ label: 'Órdenes de laboratorio pendientes', value: ordenesLabPendientes.value, icon: 'mdi-flask-outline', color: 'secondary', to: '/laboratorio' })
+  }
   return [...base, ...f4]
 })
 
@@ -44,6 +50,7 @@ const atajos = computed(() => [
   { title: 'Pacientes', icon: 'mdi-paw-outline', to: '/pacientes', show: true },
   { title: 'Tutores', icon: 'mdi-account-heart-outline', to: '/tutores', show: true },
   { title: 'Consultas', icon: 'mdi-stethoscope', to: '/consultas', show: auth.can.clinicaRead },
+  { title: 'Laboratorio', icon: 'mdi-flask-outline', to: '/laboratorio', show: auth.can.laboratorioRead },
   { title: 'Vacunación pendiente', icon: 'mdi-needle', to: '/vacunacion/pendientes', show: true },
   { title: 'Comunicaciones', icon: 'mdi-email-fast-outline', to: '/comunicaciones', show: auth.can.comunicacionesRead },
   { title: 'Inventario', icon: 'mdi-package-variant-closed', to: '/inventario', show: auth.can.inventarioRead },
@@ -57,6 +64,9 @@ async function load() {
   error.value = ''
   try {
     resumen.value = await getResumen()
+    if (auth.can.laboratorioRead) {
+      try { ordenesLabPendientes.value = (await listOrdenes({ estado: 'SOLICITADA,MUESTRA_TOMADA,EN_PROCESO', size: 1 })).totalElements } catch { ordenesLabPendientes.value = null }
+    }
   } catch (e) {
     error.value = errorText(e, 'No se pudo cargar el resumen')
   } finally {

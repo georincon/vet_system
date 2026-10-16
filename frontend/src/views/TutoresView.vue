@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { onMounted } from 'vue'
-import { createTutor, listPacientesDeTutor, listTutores, updateTutor } from '@/api/tutores'
+import { useRoute } from 'vue-router'
+import { createTutor, getTutor, listPacientesDeTutor, listTutores, updateTutor } from '@/api/tutores'
 import { useUiStore } from '@/stores/ui'
 import { errorText } from '@/utils/errors'
 import { formRules } from '@/utils/rules'
@@ -164,8 +165,14 @@ async function openPacientes(tutor: Tutor) {
   }
 }
 
-onMounted(() => {
+const route = useRoute()
+onMounted(async () => {
   void load()
+  // Enlace profundo desde "Enviar al tutor": /tutores?editar=ID abre la edición de consentimientos.
+  const editar = Number(route.query.editar)
+  if (editar) {
+    try { openEdit(await getTutor(editar)) } catch (error) { ui.showError(errorText(error, 'No se pudo abrir el tutor')) }
+  }
 })
 </script>
 

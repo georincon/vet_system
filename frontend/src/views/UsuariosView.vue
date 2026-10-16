@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { listUsuarios, createUsuario } from '@/api/usuarios'
+import { getPerfilProfesional, updatePerfilProfesionalUsuario } from '@/api/formula'
+import { useAuthStore } from '@/stores/auth'
 import { useUiStore } from '@/stores/ui'
 import { errorText } from '@/utils/errors'
 import { formRules, password } from '@/utils/rules'
@@ -13,6 +15,7 @@ interface FormHandle {
 }
 
 const ui = useUiStore()
+const auth = useAuthStore()
 
 const items = ref<Usuario[]>([])
 const loading = ref(false)
@@ -85,6 +88,34 @@ async function save() {
   }
 }
 
+// Tarjeta profesional (solo VETERINARIO/ADMIN; la edita el ADMIN)
+const tpDialog = ref(false)
+const tpUsuario = ref<Usuario | null>(null)
+const tpNumero = ref('')
+const tpEspecialidad = ref('')
+const tpSaving = ref(false)
+async function abrirTp(u: Usuario) {
+  tpUsuario.value = u
+  tpNumero.value = ''
+  tpEspecialidad.value = ''
+  tpDialog.value = true
+  // El GET del perfil es del usuario actual; para otros se parte de vacío y "" limpia.
+  if (u.id === auth.usuario?.id) {
+    try { const p = await getPerfilProfesional(); tpNumero.value = p.numeroProfesional ?? ''; tpEspecialidad.value = p.especialidad ?? '' } catch { /* vacío */ }
+  }
+}
+async function guardarTp() {
+  if (!tpUsuario.value) return
+  tpSaving.value = true
+  try {
+    await updatePerfilProfesionalUsuario(tpUsuario.value.id, {
+      numeroProfesional: tpNumero.value.trim() || undefined, especialidad: tpEspecialidad.value.trim() || undefined,
+    })
+    ui.showSuccess('Tarjeta profesional actualizada')
+    tpDialog.value = false
+  } catch (error) { ui.showError(errorText(error, 'No se pudo guardar la tarjeta profesional')) } finally { tpSaving.value = false }
+}
+
 onMounted(() => {
   void load()
 })
@@ -125,6 +156,7 @@ onMounted(() => {
           { title: 'Correo', key: 'email' },
           { title: 'Rol', key: 'rol' },
           { title: 'Estado', key: 'activo' },
+          { title: 'Tarjeta prof.', key: 'tp', sortable: false },
         ]"
         :items="items"
         :loading="loading"
@@ -147,6 +179,11 @@ onMounted(() => {
             :color="item.activo ? 'success' : 'error'"
             :text="item.activo ? 'Activo' : 'Inactivo'"
           />
+        </template>
+        <template #item.tp="{ item }">
+          <v-btn v-if="item.rol === 'VETERINARIO' || item.rol === 'ADMIN'" size="small" variant="text" prepend-icon="mdi-card-account-details-outline" @click="abrirTp(item)">
+            Tarjeta profesional
+          </v-btn>
         </template>
         <template #bottom>
           <div v-if="params.totalPages > 1" class="pa-4 d-flex justify-center">
@@ -219,6 +256,17 @@ onMounted(() => {
             Crear usuario
           </v-btn>
         </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="tpDialog" max-width="480">
+      <v-card>
+        <v-card-title class="pt-4">Tarjeta profesional · {{ tpUsuario?.nombre }}</v-card-title>
+        <v-card-text>
+          <v-text-field v-model="tpNumero" label="Tarjeta profesional (T.P.)" maxlength="50" class="mb-3" />
+          <v-text-field v-model="tpEspecialidad" label="Especialidad" maxlength="120" />
+        </v-card-text>
+        <v-card-actions class="px-4 pb-4"><v-spacer /><v-btn variant="text" @click="tpDialog = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="flat" :loading="tpSaving" @click="guardarTp">Guardar</v-btn></v-card-actions>
       </v-card>
     </v-dialog>
   </div>

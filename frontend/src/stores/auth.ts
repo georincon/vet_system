@@ -53,6 +53,29 @@ export const useAuthStore = defineStore('auth', () => {
     reportesVentas: hasRole('ADMIN'),
     reportesCartera: hasRole('ADMIN', 'RECEPCION'),
     ventasDashboard: hasRole('ADMIN', 'RECEPCION'),
+    /** Etapa A (docs/api-etapa-a-clinica.md, matriz de roles): RECEPCION no accede a nada clínico. */
+    laboratorioRead: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    laboratorioOrdenar: hasRole('ADMIN', 'VETERINARIO'),
+    /** Toma de muestra, captura de resultados e importación (AUXILIAR incluido). */
+    laboratorioCapturar: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    /** Validar, corregir, informes de imagen/patología. */
+    laboratorioValidar: hasRole('ADMIN', 'VETERINARIO'),
+    catalogoLabRead: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    catalogoLabWrite: hasRole('ADMIN', 'VETERINARIO'),
+    archivosSubir: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    archivosEliminar: hasRole('ADMIN', 'VETERINARIO'),
+    procedimientosRead: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    procedimientosWrite: hasRole('ADMIN', 'VETERINARIO'),
+    monitoreoAnestesico: hasRole('ADMIN', 'VETERINARIO', 'AUXILIAR'),
+    /** Etapa B. */
+    planWrite: hasRole('ADMIN', 'VETERINARIO'),
+    perfilProfesional: hasRole('ADMIN', 'VETERINARIO'),
+    /** ADMIN y VETERINARIO comparten siempre; AUXILIAR solo si el backend lo habilita (ver utils/compartir.ts). */
+    compartir: hasRole('ADMIN', 'VETERINARIO'),
+    compartirRevocar: hasRole('ADMIN', 'VETERINARIO'),
+    /** Historial de cobros en la historia: ADMIN ve presupuestos y facturas; VETERINARIO solo presupuestos de sus consultas. */
+    cobrosHistoria: hasRole('ADMIN', 'VETERINARIO'),
+    cobrosFacturas: hasRole('ADMIN'),
   }))
 
   function setSession(data: LoginResponse) {

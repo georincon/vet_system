@@ -1,5 +1,6 @@
 package com.veterinaria.comunicaciones.application;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -21,7 +22,9 @@ class EmailSimuladoCanalEnvio implements CanalEnvio {
 
     @Override
     public ResultadoEnvio enviar(Mensaje m) {
-        log.info("[EMAIL simulado] para={} asunto='{}'\n{}", m.destinatario(), m.asunto(), m.cuerpo());
+        log.info("[EMAIL simulado] para={} asunto='{}' adjuntos={}\n{}", m.destinatario(), m.asunto(),
+                m.adjuntos() == null ? List.of() : m.adjuntos().stream().map(a -> a.nombre() + " (" + a.contenido().length + " B)").toList(),
+                m.cuerpo());
         return new ResultadoEnvio(true, "LOG_SIMULADO", "sim-" + UUID.randomUUID());
     }
 }

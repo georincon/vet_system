@@ -46,6 +46,26 @@ services:
       VET_ARCHIVOS_RUTA: /data/archivos
       # Clave de analizadores/LIS (cabecera X-API-Key en /api/laboratorio/integracion/**). Vacia = deshabilitada.
       VET_LAB_API_KEY: ${VET_LAB_API_KEY:-}
+      # Etapa B: URL publica (https) que usan los enlaces seguros de documentos y la baja de correos, y nombre de la clinica.
+      VET_PUBLIC_URL: ${VET_PUBLIC_URL:-http://localhost:9010}
+      VET_CLINICA_NOMBRE: ${VET_CLINICA_NOMBRE:-Clinica Veterinaria}
+      # Correo (sin host = simulado)
+      VET_MAIL_HOST: ${VET_MAIL_HOST:-}
+      VET_MAIL_PORT: ${VET_MAIL_PORT:-587}
+      VET_MAIL_USER: ${VET_MAIL_USER:-}
+      VET_MAIL_PASSWORD: ${VET_MAIL_PASSWORD:-}
+      VET_MAIL_FROM: ${VET_MAIL_FROM:-no-reply@veterinaria.local}
+      # WhatsApp Cloud API de Meta (sin token/phone-id = simulado)
+      VET_WHATSAPP_TOKEN: ${VET_WHATSAPP_TOKEN:-}
+      VET_WHATSAPP_PHONE_ID: ${VET_WHATSAPP_PHONE_ID:-}
+      VET_WHATSAPP_API_VERSION: ${VET_WHATSAPP_API_VERSION:-v21.0}
+      VET_WHATSAPP_TEMPLATE: ${VET_WHATSAPP_TEMPLATE:-}
+      VET_WHATSAPP_TEMPLATE_LANG: ${VET_WHATSAPP_TEMPLATE_LANG:-es}
+      VET_WHATSAPP_PAIS: ${VET_WHATSAPP_PAIS:-57}
+      # Enlaces seguros de documentos
+      VET_COMPARTIR_VIGENCIA_HORAS: ${VET_COMPARTIR_VIGENCIA_HORAS:-72}
+      VET_COMPARTIR_MAX_DESCARGAS: ${VET_COMPARTIR_MAX_DESCARGAS:-5}
+      VET_COMPARTIR_AUXILIAR: ${VET_COMPARTIR_AUXILIAR:-false}
     volumes:
       - veterinaria_archivos:/data/archivos
     ports:

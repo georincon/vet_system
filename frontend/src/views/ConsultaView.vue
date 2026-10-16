@@ -8,6 +8,12 @@ import { getTutor } from '@/api/tutores'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EstadoChip from '@/components/EstadoChip.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import EnviarTutorButton from '@/components/compartir/EnviarTutorButton.vue'
+import OrdenesPacientePanel from '@/components/laboratorio/OrdenesPacientePanel.vue'
+import PlanTratamientoPanel from '@/components/plan/PlanTratamientoPanel.vue'
+import ProcedimientosPanel from '@/components/procedimientos/ProcedimientosPanel.vue'
+import { rutaFormulaConsultaPdf, rutaResumenConsultaPdf } from '@/api/formula'
+import { abrirPdf } from '@/utils/descarga'
 import AddendumsPanel from '@/components/consulta/AddendumsPanel.vue'
 import DiagnosticosPanel from '@/components/consulta/DiagnosticosPanel.vue'
 import RecetasPanel from '@/components/consulta/RecetasPanel.vue'
@@ -19,6 +25,7 @@ import { errorText } from '@/utils/errors'
 import { etiquetaFecha, etiquetaInstante } from '@/utils/fecha'
 import { cop } from '@/utils/dinero'
 import type { Presupuesto } from '@/types/fase4'
+import type { DocumentoCompartible } from '@/types/etapa'
 import type { Alergia, Consulta, Paciente, PlantillaSoap, TipoConsulta, Triaje } from '@/types'
 
 const route = useRoute()
@@ -165,6 +172,28 @@ function aplicarPlantilla() {
   confirmarPlantilla.value = false
 }
 
+const addendumKey = ref(0)
+const pdfCargando = ref<'formula' | 'resumen' | null>(null)
+const recetasVigentes = computed(() => (consulta.value?.recetas ?? []).filter((r) => r.estado !== 'CANCELADA'))
+async function descargarPdf(tipo: 'formula' | 'resumen') {
+  pdfCargando.value = tipo
+  try {
+    if (tipo === 'formula') await abrirPdf(rutaFormulaConsultaPdf(id.value), `formula-${consulta.value?.codigo}.pdf`)
+    else await abrirPdf(rutaResumenConsultaPdf(id.value), `resumen-${consulta.value?.codigo}.pdf`)
+  } catch (e) { ui.showError(errorText(e, 'No se pudo generar el PDF')) } finally { pdfCargando.value = null }
+}
+const documentosCompartibles = computed<DocumentoCompartible[]>(() => {
+  const docs: DocumentoCompartible[] = recetasVigentes.value.map((r) => ({
+    tipo: 'FORMULA', id: r.id, titulo: `Fórmula médica del ${etiquetaFecha(r.fecha)}`, enviable: cerrada.value,
+    motivo: cerrada.value ? undefined : 'La consulta sigue abierta: la fórmula es un borrador. Cierre la consulta para compartirla.',
+  }))
+  docs.push({
+    tipo: 'RESUMEN_CONSULTA', id: id.value, titulo: `Resumen de la consulta ${consulta.value?.codigo ?? ''}`, enviable: cerrada.value,
+    motivo: cerrada.value ? undefined : 'Solo se comparte el resumen de consultas cerradas.',
+  })
+  return docs
+})
+
 const alergiasActivas = computed(() => alergias.value.filter((a) => a.activo))
 const colorAlergia = (s?: string | null) => (s === 'ALTA' ? 'error' : s === 'MEDIA' ? 'warning' : 'grey')
 
@@ -179,6 +208,9 @@ watch(id, () => { loading.value = true; void load() })
       <v-btn variant="flat" prepend-icon="mdi-arrow-left" :to="{ name: 'consultas' }">Consultas</v-btn>
       <v-btn v-if="consulta && auth.can.clinicaRead" variant="flat" prepend-icon="mdi-timeline-text-outline"
         :to="{ name: 'historia', params: { id: consulta.paciente.id } }">Historia</v-btn>
+      <v-btn v-if="consulta && recetasVigentes.length" variant="flat" prepend-icon="mdi-file-pdf-box" :loading="pdfCargando === 'formula'" @click="descargarPdf('formula')">Descargar fórmula PDF</v-btn>
+      <v-btn v-if="consulta && cerrada" variant="flat" prepend-icon="mdi-file-document-outline" :loading="pdfCargando === 'resumen'" @click="descargarPdf('resumen')">Resumen de consulta PDF</v-btn>
+      <EnviarTutorButton v-if="consulta" :paciente-id="consulta.paciente.id" :documentos="documentosCompartibles" variant="flat" />
     </PageHeader>
 
     <v-progress-linear v-if="loading" indeterminate color="primary" />
@@ -255,6 +287,22 @@ watch(id, () => { loading.value = true; void load() })
         </v-card-actions>
       </v-card>
 
+      <v-card border elevation="0" class="mb-4">
+        <v-card-text>
+          <h2 class="vet-section-title">Plan de tratamiento y seguimiento</h2>
+          <PlanTratamientoPanel :consulta-id="consulta.id" :cerrada="cerrada" :can-write="auth.can.planWrite" @seguimiento="addendumKey++" />
+        </v-card-text>
+      </v-card>
+
+      <v-card border elevation="0" class="mb-4">
+        <v-card-text>
+          <h2 class="vet-section-title">Exámenes, imágenes y patología</h2>
+          <OrdenesPacientePanel :paciente-id="consulta.paciente.id" :consulta-id="consulta.id" />
+          <h2 class="vet-section-title mt-6">Procedimientos y cirugías</h2>
+          <ProcedimientosPanel :paciente-id="consulta.paciente.id" :consulta-id="consulta.id" />
+        </v-card-text>
+      </v-card>
+
       <v-card v-if="cargoVisible" border elevation="0" class="mb-4">
         <v-card-text>
           <div class="d-flex align-center ga-2">
@@ -274,7 +322,7 @@ watch(id, () => { loading.value = true; void load() })
       <v-card v-if="cerrada" border elevation="0" class="mb-4">
         <v-card-text>
           <h2 class="vet-section-title">Addendums</h2>
-          <AddendumsPanel :consulta-id="consulta.id" :can-write="auth.can.clinicaWrite" />
+          <AddendumsPanel :key="addendumKey" :consulta-id="consulta.id" :can-write="auth.can.clinicaWrite" />
         </v-card-text>
       </v-card>
       <div v-if="consulta.citaId" class="text-caption text-medium-emphasis">Cita vinculada #{{ consulta.citaId }}</div>

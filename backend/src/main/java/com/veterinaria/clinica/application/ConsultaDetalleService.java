@@ -291,6 +291,8 @@ public class ConsultaDetalleService {
             i.setReceta(receta);
             i.setItemId(dto.itemId());
             i.setMedicamento(dto.medicamento().trim());
+            i.setConcentracion(Textos.limpiar(dto.concentracion()));
+            i.setPresentacion(Textos.limpiar(dto.presentacion()));
             i.setDosis(Textos.limpiar(dto.dosis()));
             i.setVia(Textos.limpiar(dto.via()));
             i.setFrecuencia(Textos.limpiar(dto.frecuencia()));

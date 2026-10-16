@@ -31,6 +31,9 @@ const FALLBACK_MESSAGES: Record<number, string> = {
   403: 'No tiene permisos',
   404: 'Recurso no encontrado',
   409: 'Conflicto con el estado actual del recurso',
+  413: 'El archivo supera el tamaño permitido',
+  415: 'Tipo de archivo no permitido',
+  410: 'El enlace ya no está disponible',
   422: 'La solicitud viola una regla de negocio',
   429: 'Demasiadas solicitudes, intente más tarde',
 }
@@ -115,6 +118,16 @@ http.interceptors.response.use(
     }
 
     const status = error.response?.status
+
+    // Descargas (responseType blob): el cuerpo del error JSON llega como Blob; se decodifica para mostrar el mensaje real.
+    if (error.response && error.response.data instanceof Blob) {
+      try {
+        const text = await error.response.data.text()
+        error.response.data = JSON.parse(text)
+      } catch {
+        error.response.data = undefined
+      }
+    }
 
     if (status === 401 && !isLoginRequest(error.config)) {
       await handleUnauthorized()

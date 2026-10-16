@@ -78,6 +78,25 @@ vet:
     # Clave de analizadores/LIS para /api/laboratorio/integracion/** (cabecera X-API-Key). Vacia = integracion deshabilitada.
     api-key: ${VET_LAB_API_KEY:}
 
+  # ---- Etapa B: compartir documentos con el tutor ----
+  compartir:
+    vigencia-horas: ${VET_COMPARTIR_VIGENCIA_HORAS:72}      # vida del enlace seguro
+    max-descargas: ${VET_COMPARTIR_MAX_DESCARGAS:5}         # descargas por enlace (Meta descarga el documento al enviar)
+    auxiliar-habilitado: ${VET_COMPARTIR_AUXILIAR:false}    # AUXILIAR puede enviar formula/resultados/carnet con veterinario responsable
+  whatsapp:
+    # Sin token o phone-id: modo simulado (ENVIADO_SIMULADO). Ver docs/api-etapa-b-compartir.md
+    token: ${VET_WHATSAPP_TOKEN:}
+    phone-id: ${VET_WHATSAPP_PHONE_ID:}
+    api-version: ${VET_WHATSAPP_API_VERSION:v21.0}
+    base-url: ${VET_WHATSAPP_BASE_URL:https://graph.facebook.com}
+    template-name: ${VET_WHATSAPP_TEMPLATE:}                # plantilla aprobada (fuera de la ventana de 24 h)
+    template-lang: ${VET_WHATSAPP_TEMPLATE_LANG:es}
+    template-params: ${VET_WHATSAPP_TEMPLATE_PARAMS:tutor,paciente,enlace}   # variables del cuerpo, en orden
+    template-header-document: ${VET_WHATSAPP_TEMPLATE_HEADER_DOC:false}
+    pais-defecto: ${VET_WHATSAPP_PAIS:57}
+    max-reintentos: ${VET_WHATSAPP_MAX_REINTENTOS:2}
+    backoff-ms: ${VET_WHATSAPP_BACKOFF_MS:500}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

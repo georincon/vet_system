@@ -34,6 +34,14 @@ public class RecetaItem {
     @Column(nullable = false)
     private String medicamento;
 
+    /** Concentracion del principio activo (p. ej. "500 mg"). */
+    @Column(length = 100)
+    private String concentracion;
+
+    /** Presentacion (p. ej. "Tabletas x 10"). */
+    @Column(length = 100)
+    private String presentacion;
+
     @Column(length = 100)
     private String dosis;
 

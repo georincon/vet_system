@@ -25,6 +25,12 @@ export const router = createRouter({
       meta: { public: true, title: 'Iniciar sesión' },
     },
     {
+      path: '/verificar/:codigo?',
+      name: 'verificar',
+      component: () => import('@/views/VerificarView.vue'),
+      meta: { public: true, title: 'Verificar documento' },
+    },
+    {
       path: '/',
       name: 'root',
       redirect: { name: 'dashboard' },
@@ -112,6 +118,36 @@ export const router = createRouter({
           name: 'facturacion',
           component: () => import('@/views/FacturacionView.vue'),
           meta: { title: 'Caja y facturas', roles: ['ADMIN', 'RECEPCION', 'VETERINARIO'] },
+        },
+        {
+          path: 'laboratorio',
+          name: 'laboratorio',
+          component: () => import('@/views/LaboratorioView.vue'),
+          meta: { title: 'Bandeja de laboratorio', roles: CLINICA },
+        },
+        {
+          path: 'laboratorio/ordenes/:id(\\d+)',
+          name: 'orden-lab',
+          component: () => import('@/views/OrdenLabView.vue'),
+          meta: { title: 'Orden de examen', roles: CLINICA },
+        },
+        {
+          path: 'laboratorio/catalogo',
+          name: 'laboratorio-catalogo',
+          component: () => import('@/views/CatalogoLabView.vue'),
+          meta: { title: 'Catálogo de exámenes', roles: CLINICA },
+        },
+        {
+          path: 'procedimientos/:id(\\d+)',
+          name: 'procedimiento',
+          component: () => import('@/views/ProcedimientoView.vue'),
+          meta: { title: 'Procedimiento / cirugía', roles: CLINICA },
+        },
+        {
+          path: 'mi-perfil',
+          name: 'mi-perfil',
+          component: () => import('@/views/MiPerfilView.vue'),
+          meta: { title: 'Mi perfil profesional', roles: ['ADMIN', 'VETERINARIO'] },
         },
         {
           path: 'auditoria',

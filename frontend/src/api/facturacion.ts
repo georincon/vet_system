@@ -47,7 +47,7 @@ export async function facturarPresupuesto(id: number, body: { condicionPago: str
 }
 
 // ---- Facturas ----
-export interface FacturaFiltro { tutorId?: number | null; estado?: string | null; tipo?: string | null; q?: string; desde?: string; hasta?: string; conSaldo?: boolean | null; page?: number; size?: number }
+export interface FacturaFiltro { tutorId?: number | null; pacienteId?: number | null; estado?: string | null; tipo?: string | null; q?: string; desde?: string; hasta?: string; conSaldo?: boolean | null; page?: number; size?: number }
 export async function listFacturas(f: FacturaFiltro = {}): Promise<Page<FacturaResumen>> {
   return (await http.get<Page<FacturaResumen>>(`${B}/facturas`, { params: limpio({ ...f, page: f.page ?? 0, size: f.size ?? 20 }) })).data
 }

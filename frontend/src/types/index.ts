@@ -399,6 +399,8 @@ export interface RecetaItem {
   id?: number
   itemId?: number | null
   medicamento: string
+  concentracion?: string | null
+  presentacion?: string | null
   dosis?: string | null
   via?: string | null
   frecuencia?: string | null
@@ -493,7 +495,9 @@ export interface PesoRegistro {
   registradoPor?: string | null
 }
 
-export type TipoHistoria = 'CONSULTA' | 'VACUNA' | 'DESPARASITACION' | 'PESO' | 'ALERGIA'
+export type TipoHistoria =
+  | 'CONSULTA' | 'VACUNA' | 'DESPARASITACION' | 'PESO' | 'ALERGIA'
+  | 'LABORATORIO' | 'IMAGEN' | 'PATOLOGIA' | 'PROCEDIMIENTO' | 'CIRUGIA' | 'ARCHIVO'
 
 export interface HistoriaItem {
   tipo: TipoHistoria

@@ -35,6 +35,29 @@ const MAP: Record<string, { color: string; text: string; icon?: string }> = {
   DISPONIBLE: { color: 'success', text: 'Disponible' },
   CUARENTENA: { color: 'warning', text: 'Cuarentena' },
   RETIRADO: { color: 'grey', text: 'Retirado' },
+  // Etapa A: laboratorio, imagen, patología, procedimientos
+  SOLICITADA: { color: 'warning', text: 'Solicitada', icon: 'mdi-clipboard-clock-outline' },
+  MUESTRA_TOMADA: { color: 'secondary', text: 'Muestra tomada', icon: 'mdi-test-tube' },
+  EN_PROCESO: { color: 'info', text: 'En proceso', icon: 'mdi-progress-clock' },
+  COMPLETADA: { color: 'success', text: 'Completada', icon: 'mdi-check-circle-outline' },
+  SOLICITADO: { color: 'warning', text: 'Solicitado' },
+  RESULTADO: { color: 'info', text: 'Con resultado (borrador)' },
+  VALIDADO: { color: 'success', text: 'Validado', icon: 'mdi-check-decagram' },
+  CANCELADO: { color: 'error', text: 'Cancelado' },
+  CORREGIDO: { color: 'grey', text: 'Corregido (reemplazado)', icon: 'mdi-history' },
+  REALIZADA: { color: 'success', text: 'Realizada' },
+  APLAZADA: { color: 'warning', text: 'Aplazada' },
+  FIRMADO: { color: 'success', text: 'Firmado', icon: 'mdi-draw-pen' },
+  // Etapa B: fórmula, plan, controles, envíos
+  VIGENTE: { color: 'success', text: 'Vigente', icon: 'mdi-check-decagram' },
+  CUMPLIDA: { color: 'grey', text: 'Cumplida' },
+  ANULADA_DOC: { color: 'error', text: 'Anulada' },
+  ACTIVO: { color: 'primary', text: 'Activo' },
+  REALIZADO: { color: 'success', text: 'Realizado' },
+  COMPLETADO: { color: 'success', text: 'Completado' },
+  AGENDADO: { color: 'primary', text: 'Agendado', icon: 'mdi-calendar-check-outline' },
+  ENVIADO_SIMULADO: { color: 'warning', text: 'Enviado (simulado)', icon: 'mdi-test-tube' },
+  FALLIDO: { color: 'error', text: 'Fallido', icon: 'mdi-alert-circle-outline' },
 }
 
 const info = computed(() => MAP[props.estado ?? ''] ?? { color: 'grey', text: props.estado ?? '—' })

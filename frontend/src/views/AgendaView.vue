@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { getPaciente } from '@/api/pacientes'
 import { deleteBloqueo, getAgenda } from '@/api/agenda'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -162,9 +164,33 @@ async function eliminarBloqueo() {
 }
 
 watch([fecha, vista, veterinarioId, salaId, incluirCanceladas], load)
+const route = useRoute()
+const router = useRouter()
+/** Cita precargada desde un control de seguimiento (`citaSugerida`): /agenda?nuevaCita=1&pacienteId&fecha&veterinarioId&motivo */
+async function precargarCita() {
+  const q = route.query
+  if (!q.nuevaCita || !auth.can.agendaWrite) return
+  const pacienteId = Number(q.pacienteId) || null
+  let paciente = null
+  if (pacienteId) {
+    try {
+      const p = await getPaciente(pacienteId)
+      paciente = { id: p.id, codigo: p.codigo, nombre: p.nombre, especie: p.especie.nombre, raza: p.raza?.nombre, sexo: p.sexo, fechaNacimiento: p.fechaNacimiento, activo: p.activo }
+    } catch { /* se deja elegir manualmente */ }
+  }
+  if (typeof q.fecha === 'string' && q.fecha) fecha.value = q.fecha
+  citaEditando.value = null
+  citaDefaults.value = {
+    fecha: typeof q.fecha === 'string' && q.fecha ? q.fecha : fecha.value, horaInicio: '09:00', pacienteId, paciente,
+    veterinarioId: Number(q.veterinarioId) || null, motivo: typeof q.motivo === 'string' ? q.motivo : '',
+  }
+  citaDialog.value = true
+  void router.replace({ query: {} })
+}
 onMounted(async () => {
   try { await catalogos.ensure() } catch (e) { ui.showError(errorText(e, 'No se pudieron cargar los catálogos')) }
   await load()
+  await precargarCita()
 })
 </script>
 

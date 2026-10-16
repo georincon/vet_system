@@ -24,7 +24,7 @@ public class ReglaService {
 
     public ReglaService(JdbcClient jdbc, List<CanalEnvio> adaptadores) {
         this.jdbc = jdbc;
-        this.canales = adaptadores.stream().collect(Collectors.toMap(CanalEnvio::canal, Function.identity()));
+        this.canales = adaptadores.stream().filter(CanalEnvio::admiteRecordatorios).collect(Collectors.toMap(CanalEnvio::canal, Function.identity()));
     }
 
     private static final String SELECT = """

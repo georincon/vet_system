@@ -47,7 +47,7 @@ export async function createPeso(id: number, pesoKg: number, fecha?: string): Pr
   return data
 }
 
-export async function getHistoria(id: number, tipo?: TipoHistoria, page = 0, size = 10): Promise<Page<HistoriaItem>> {
+export async function getHistoria(id: number, tipo?: TipoHistoria | string, page = 0, size = 10): Promise<Page<HistoriaItem>> {
   const { data } = await http.get<Page<HistoriaItem>>(`/pacientes/${id}/historia`, {
     params: { tipo: tipo || undefined, page, size },
   })

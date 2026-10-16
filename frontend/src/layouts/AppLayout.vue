@@ -36,6 +36,7 @@ const groups = computed<NavGroup[]>(() => {
         ...(auth.can.clinicaRead
           ? [{ title: 'Consultas', icon: 'mdi-stethoscope', to: '/consultas' }]
           : []),
+        ...(auth.can.laboratorioRead ? [{ title: 'Laboratorio', icon: 'mdi-flask-outline', to: '/laboratorio' }] : []),
         { title: 'Vacunación', icon: 'mdi-needle', to: '/vacunacion/pendientes' },
         ...(auth.can.inventarioRead ? [{ title: 'Inventario', icon: 'mdi-package-variant-closed', to: '/inventario' }] : []),
         ...(auth.can.comprasRead ? [{ title: 'Compras', icon: 'mdi-truck-delivery-outline', to: '/compras' }] : []),
@@ -43,6 +44,10 @@ const groups = computed<NavGroup[]>(() => {
       ],
     },
   ]
+
+  if (auth.can.perfilProfesional) {
+    all.push({ title: 'Mi cuenta', items: [{ title: 'Mi perfil profesional', icon: 'mdi-card-account-details-outline', to: '/mi-perfil' }] })
+  }
 
   if (auth.can.comunicacionesRead) {
     all.push({

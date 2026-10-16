@@ -4,6 +4,8 @@ import { createReceta, deleteReceta, updateReceta } from '@/api/consultas'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import EstadoChip from '@/components/EstadoChip.vue'
 import { useUiStore } from '@/stores/ui'
+import { rutaFormulaRecetaPdf } from '@/api/formula'
+import { abrirPdf } from '@/utils/descarga'
 import { errorText } from '@/utils/errors'
 import { etiquetaFecha } from '@/utils/fecha'
 import type { Receta, RecetaItem } from '@/types'
@@ -23,7 +25,7 @@ const controlada = ref(false)
 const items = ref<RecetaItem[]>([])
 
 const vacio = (): RecetaItem => ({
-  medicamento: '', dosis: '', via: '', frecuencia: '', duracion: '', cantidad: null, indicaciones: '',
+  medicamento: '', concentracion: '', presentacion: '', dosis: '', via: '', frecuencia: '', duracion: '', cantidad: null, indicaciones: '',
 })
 
 function abrir(r?: Receta) {
@@ -47,7 +49,7 @@ async function guardar() {
       validaHasta: validaHasta.value || undefined,
       esControlada: controlada.value,
       items: validos.map((i, idx) => ({
-        itemId: i.itemId ?? undefined, medicamento: i.medicamento.trim(), dosis: i.dosis?.trim() ?? '',
+        itemId: i.itemId ?? undefined, medicamento: i.medicamento.trim(), concentracion: i.concentracion?.trim() ?? '', presentacion: i.presentacion?.trim() ?? '', dosis: i.dosis?.trim() ?? '',
         via: i.via?.trim() ?? '', frecuencia: i.frecuencia?.trim() ?? '', duracion: i.duracion?.trim() ?? '',
         cantidad: i.cantidad === null || (i.cantidad as unknown) === '' ? undefined : Number(i.cantidad),
         indicaciones: i.indicaciones?.trim() ?? '', orden: idx + 1,
@@ -63,6 +65,14 @@ async function guardar() {
   } finally {
     saving.value = false
   }
+}
+
+const pdfId = ref<number | null>(null)
+async function descargarFormula(r: Receta) {
+  pdfId.value = r.id
+  try { await abrirPdf(rutaFormulaRecetaPdf(r.id), `formula-${r.id}.pdf`) }
+  catch (e) { ui.showError(errorText(e, 'No se pudo generar la fórmula')) }
+  finally { pdfId.value = null }
 }
 
 async function anularReceta() {
@@ -92,6 +102,7 @@ async function anularReceta() {
             {{ etiquetaFecha(r.fecha) }}<template v-if="r.validaHasta"> · válida hasta {{ etiquetaFecha(r.validaHasta) }}</template>
           </span>
           <v-spacer />
+          <v-btn size="x-small" variant="tonal" prepend-icon="mdi-file-pdf-box" :loading="pdfId === r.id" @click="descargarFormula(r)">Descargar fórmula PDF</v-btn>
           <template v-if="!readonly && r.estado !== 'CANCELADA'">
             <v-btn size="x-small" variant="text" icon="mdi-pencil" title="Editar" @click="abrir(r)" />
             <v-btn size="x-small" variant="text" icon="mdi-cancel" color="error" title="Anular receta" @click="anular = r" />
@@ -101,7 +112,7 @@ async function anularReceta() {
           <thead><tr><th>Medicamento</th><th>Dosis</th><th>Vía</th><th>Frecuencia</th><th>Duración</th><th>Cant.</th></tr></thead>
           <tbody>
             <tr v-for="i in r.items" :key="i.id">
-              <td>{{ i.medicamento }}<div v-if="i.indicaciones" class="text-caption text-medium-emphasis">{{ i.indicaciones }}</div></td>
+              <td>{{ i.medicamento }}<span v-if="i.concentracion || i.presentacion" class="text-medium-emphasis"> · {{ [i.concentracion, i.presentacion].filter(Boolean).join(' ') }}</span><div v-if="i.indicaciones" class="text-caption text-medium-emphasis">{{ i.indicaciones }}</div></td>
               <td>{{ i.dosis || '—' }}</td><td>{{ i.via || '—' }}</td><td>{{ i.frecuencia || '—' }}</td>
               <td>{{ i.duracion || '—' }}</td><td>{{ i.cantidad ?? '—' }}</td>
             </tr>
@@ -120,10 +131,12 @@ async function anularReceta() {
           <div v-for="(it, idx) in items" :key="idx" class="border rounded pa-3 mb-3">
             <v-row dense>
               <v-col cols="12" md="4"><v-text-field v-model="it.medicamento" label="Medicamento" /></v-col>
-              <v-col cols="6" md="2"><v-text-field v-model="it.dosis" label="Dosis" /></v-col>
-              <v-col cols="6" md="2"><v-text-field v-model="it.via" label="Vía" /></v-col>
-              <v-col cols="6" md="2"><v-text-field v-model="it.frecuencia" label="Frecuencia" /></v-col>
-              <v-col cols="6" md="2"><v-text-field v-model="it.duracion" label="Duración" /></v-col>
+              <v-col cols="6" md="4"><v-text-field v-model="it.concentracion" label="Concentración (p. ej. 500 mg)" /></v-col>
+              <v-col cols="6" md="4"><v-text-field v-model="it.presentacion" label="Presentación (p. ej. tabletas)" /></v-col>
+              <v-col cols="6" md="3"><v-text-field v-model="it.dosis" label="Dosis" /></v-col>
+              <v-col cols="6" md="3"><v-text-field v-model="it.via" label="Vía" /></v-col>
+              <v-col cols="6" md="3"><v-text-field v-model="it.frecuencia" label="Frecuencia" /></v-col>
+              <v-col cols="6" md="3"><v-text-field v-model="it.duracion" label="Duración" /></v-col>
               <v-col cols="4" md="2"><v-text-field v-model.number="it.cantidad" label="Cantidad" type="number" /></v-col>
               <v-col cols="8" md="9"><v-text-field v-model="it.indicaciones" label="Indicaciones" /></v-col>
               <v-col cols="12" md="1" class="d-flex align-center">

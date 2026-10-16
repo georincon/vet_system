@@ -70,14 +70,32 @@ public class InformePdfService {
 
     @Transactional(readOnly = true)
     public Informe generar(Long ordenId, Long itemId) {
+        return generar(ordenId, itemId, null, false);
+    }
+
+    /**
+     * Informe restringido a un tipo de examen ({@code tipo} null = todos). Con {@code soloValidados} (compartir con el
+     * tutor) se exige que todos los examenes incluidos esten VALIDADOS: sin ello, 422 y no se genera nada.
+     */
+    @Transactional(readOnly = true)
+    public Informe generar(Long ordenId, Long itemId, TipoExamen tipo, boolean soloValidados) {
         OrdenResponse o = ordenService.obtener(ordenId);
         List<ItemResponse> items = o.items().stream().filter(i -> !"CANCELADO".equals(i.estado()))
-                .filter(i -> itemId == null || i.id().equals(itemId)).toList();
+                .filter(i -> itemId == null || i.id().equals(itemId))
+                .filter(i -> tipo == null || TipoExamen.de(i.tipo()) == tipo).toList();
         if (itemId != null && items.isEmpty()) {
             throw new ResourceNotFoundException("Item de orden", itemId);
         }
         if (items.isEmpty()) {
-            throw new BusinessException("La orden no tiene examenes activos para informar");
+            throw new BusinessException(tipo == null ? "La orden no tiene examenes activos para informar"
+                    : "La orden " + o.codigo() + " no tiene examenes de tipo " + tipo + " para informar");
+        }
+        if (soloValidados) {
+            String pendientes = items.stream().filter(i -> !"VALIDADO".equals(i.estado()))
+                    .map(i -> i.examenNombre() + " (" + i.estado() + ")").collect(Collectors.joining(", "));
+            if (!pendientes.isEmpty()) {
+                throw new BusinessException("Solo se comparten resultados VALIDADOS; pendientes en la orden " + o.codigo() + ": " + pendientes);
+            }
         }
         PacienteBasico p = pacientes.obtener(o.pacienteId());
         var b = pdf.nuevo(titulo(items), o.codigo()).paciente(p, ZonaClinica.local(o.solicitadaEn()).toLocalDate());
